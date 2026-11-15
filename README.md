@@ -310,6 +310,7 @@ Aşağıdakılar hazırkı vəziyyətin dürüst siyahısıdır. Hər birinin pl
 | Sənəd | Məzmun |
 | ----- | ------ |
 | [`docs/Texniki-Izah-Senedi.docx`](docs/Texniki-Izah-Senedi.docx) | **Texniki izah sənədi (Word):** yanaşma, texnologiyalar, alqoritmlər, təhlükəsizlik, performans, test, məhdudiyyətlər, gələcək inkişaf |
+| [`docs/teqdimat-ssenarisi.md`](docs/teqdimat-ssenarisi.md) | **7 dəqiqəlik təqdimat ssenarisi**, münsiflərin texniki sualları və cavablar, ehtiyat plan, rəqəmlər |
 | [`docs/diaqramlar.md`](docs/diaqramlar.md) | Arxitektura, ardıcıllıq, circuit breaker, flood müdafiəsi, RBAC, status maşınları, deploy |
 | [`docs/erd.md`](docs/erd.md) | Verilənlər bazasının ER diaqramı və cədvəl izahı |
 | [`public/openapi.yaml`](public/openapi.yaml) | OpenAPI 3.0 spesifikasiyası (Swagger: `/api-docs.html`) |
