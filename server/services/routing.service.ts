@@ -2,11 +2,10 @@ import { eq } from "drizzle-orm";
 import { db } from "@/server/db";
 import { roadNodes, shelters } from "@/server/db/schema";
 import { haversineM, nearestNode, type LatLng } from "@/server/engine/geo";
-import { buildPath, shortestPaths } from "@/server/engine/routing";
+import { FULL_PCT, buildPath, pickShelter, shortestPaths } from "@/server/engine/routing";
 import { trafficProvider } from "@/server/providers/traffic.provider";
 import type { RouteReason, RouteResult } from "@/lib/types";
 
-const FULL_PCT = 90;
 const WALK_M_PER_MIN = 80;
 
 export async function findRoute(origin: LatLng, prevShelterId?: string): Promise<RouteResult | null> {
@@ -22,14 +21,7 @@ export async function findRoute(origin: LatLng, prevShelterId?: string): Promise
   const nodeById = new Map(nodes.map((n) => [n.id, n]));
   const walkIn = haversineM(origin, start);
 
-  let best: { shelter: (typeof active)[number]; total: number } | null = null;
-  for (const s of active) {
-    if ((s.occupancy / s.capacity) * 100 >= FULL_PCT) continue;
-    const d = dist.get(s.nodeId);
-    if (d === undefined) continue;
-    const total = walkIn + d + haversineM(nodeById.get(s.nodeId)!, s);
-    if (!best || total < best.total) best = { shelter: s, total };
-  }
+  const best = pickShelter(active, dist, (s, d) => walkIn + d + haversineM(nodeById.get(s.nodeId)!, s));
   if (!best) return null;
 
   const s = best.shelter;

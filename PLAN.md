@@ -128,12 +128,12 @@ Each task ends with a **✅ Browser check**. Do them in order; tick them off whe
   - [x] 12.3 Approve / Dismiss buttons with loading state + toast showing what happened
   - ✅ Approve → team badge `en_route`, the new shelter appears on the citizen map and becomes route-able
 
-- [ ] **13. Engine unit tests** (15% of the score; `node:test` through `tsx`, no new deps)
-  - [ ] 13.1 Dijkstra avoids a closed edge
-  - [ ] 13.2 Route skips a shelter ≥90%
-  - [ ] 13.3 Cluster fires with 4 distinct citizens in 500 m / 5 min; not with 3, not with 4 from the same citizen, not when >5 min old
-  - [ ] 13.4 Overload fires above 95%; no duplicate open alert
-  - [ ] 13.5 `npm test` script
+- [x] **13. Engine unit tests** (15% of the score; `node:test` through `tsx`, no new deps)
+  - [x] 13.1 Dijkstra avoids a closed edge
+  - [x] 13.2 Route skips a shelter ≥90%
+  - [x] 13.3 Cluster fires with 4 distinct citizens in 500 m / 5 min; not with 3, not with 4 from the same citizen, not when >5 min old
+  - [x] 13.4 Overload fires above 95%; no duplicate open alert
+  - [x] 13.5 `npm test` script
   - ✅ `npm test` is green (terminal)
 
 - [ ] **14. Deliverable docs**

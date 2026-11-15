@@ -59,3 +59,24 @@ export function buildPath(prev: Map<string, string>, startNodeId: string, endNod
   }
   return path.reverse();
 }
+
+export const FULL_PCT = 90;
+
+export type Candidate = { id: string; nodeId: string; capacity: number; occupancy: number };
+
+/** Nearest reachable candidate by (walkIn + graph distance + walkOut); skips shelters at/above FULL_PCT. */
+export function pickShelter<T extends Candidate>(
+  candidates: T[],
+  dist: Map<string, number>,
+  cost: (s: T, graphDist: number) => number,
+): { shelter: T; total: number } | null {
+  let best: { shelter: T; total: number } | null = null;
+  for (const s of candidates) {
+    if ((s.occupancy / s.capacity) * 100 >= FULL_PCT) continue;
+    const d = dist.get(s.nodeId);
+    if (d === undefined) continue;
+    const total = cost(s, d);
+    if (!best || total < best.total) best = { shelter: s, total };
+  }
+  return best;
+}
