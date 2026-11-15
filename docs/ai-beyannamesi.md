@@ -8,7 +8,7 @@
 | Harada işlədi | Komandanın lokal repozitoriyasında, terminalda |
 | Nəyi etdi | Tətbiq kodunun, testlərin və sənədlərin böyük hissəsini **insan rəhbərliyi altında** yazdı |
 | Məhsulda AI | **Yoxdur.** Hazır tətbiq heç bir LLM/AI çağırışı etmir |
-| Digər AI alətləri | Elan olunmayıb (komanda başqa alət istifadə etdisə bura əlavə etməlidir) |
+| Digər AI alətləri | **Google Gemini:** sənədlərin (README, texniki izah sənədi və s.) hazırlanmasında və redaktəsində köməkçi kimi istifadə olunub. Gemini kod yazmayıb və məhsulda istifadə olunmur. |
 
 ## 2. Mərhələlər üzrə istifadə (git tarixçəsindən)
 
@@ -35,15 +35,17 @@ Vercel-ə yerləşdirmə komandanın işidir, AI töhfəsi deyil.
 - **Yoxlama:** `npm test` (68 test), `npm run build`; əsas funksionallıq və üç drop işləyən serverə qarşı API skriptləri ilə bir-bir yoxlanıb. Bu yoxlama real səhvlər tapdı (simulyator açarlarının seed ilə sıfırlanmaması, Yasamal/Xətai-də yol bağlama demosunun işləməməsi, vətəndaş xəritəsinin yenilənməməsi) və düzəldildi.
 - **Tarixçə yoxlanıla bilər:** hər dəyişiklik şərh olunmuş commit-dir.
 
-## 4. AI köməyinin məhdudiyyətləri
+## 4. Sənədlərdə AI istifadəsi
+
+Sənədlərin (README, texniki izah sənədi, diaqramlar) hazırlanmasında **Claude Code** real kodu və git tarixçəsini oxuyaraq mətnləri yazıb, **Google Gemini** isə sənədlərin hazırlanması və redaktəsində köməkçi alət kimi istifadə olunub. Bütün mətnlər komanda tərəfindən yoxlanılıb və rəqəmlər real yoxlama nəticələrinə (testlər, yük testi, API skripti) əsaslanır.
+
+## 5. AI köməyinin məhdudiyyətləri
 
 - AI kodunda səhv ola bilər. Avtomatik testlər yalnız mühərrikdədir; qalanı skript və əl ilə yoxlanıb. Brauzerdə son əl yoxlaması tam deyil.
 - Yol qrafının koordinatları təxminidir; **marşrut xətləri real küçələri izləmir** (texniki sənəd, bölmə 12).
 - Tutumlar, briqada adları və doluluq dəyərləri uydurma və ya təxminidir.
 
-## 5. İstifadə olunmayanlar
+## 6. İstifadə olunmayanlar
 
 - Məhsulda AI/LLM funksiyası yoxdur; icra zamanı model çağırılmır (`GEMINI_API_KEY` istifadə olunmur).
 - AI ilə yaradılmış şəkil, səs və ya üçüncü tərəf məlumat dəsti yoxdur (xəritə: OpenStreetMap).
-
-> **Təhvildən əvvəl komanda tamamlamalıdır:** "Digər AI alətləri" sətrini təsdiqləyin (Claude Code-dan kənar chat köməkçisi və s. istifadə olunubsa əlavə edin).
