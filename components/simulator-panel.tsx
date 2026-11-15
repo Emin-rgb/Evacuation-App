@@ -75,7 +75,7 @@ export function SimulatorPanel({ map, onChanged }: { map: MapData; onChanged: ()
     const lng = map.nodes.reduce((sum, p) => sum + p.lng, 0) / n;
     setBursting(true);
     try {
-      const res = await api.sosBurst(lat, lng, 3);
+      const res = await api.sosBurst(lat, lng, 4);
       toast.success(`${t.simulator.burstToast}: ${res.created}`);
       onChanged();
     } catch {

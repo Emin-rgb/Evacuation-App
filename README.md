@@ -179,7 +179,7 @@ Parollar `scrypt` ilə hash-lənmiş saxlanılır. 5 yanlış cəhddən sonra he
 2. **Simulyator:** **Tbilisi yolu**nu bağlayın. 3 saniyə ərzində vətəndaş "Yol bağlandı" xəbərdarlığı və yeni marşrut görür.
 3. **Simulyator:** hədəf məntəqəni **92%** edin. Vətəndaş növbəti məntəqəyə yönləndirilir ("Məntəqə 90% dolub").
 4. **Vətəndaş:** SOS → *Tibbi yardım*. Dispetçerin SOS siyahısında və xəritədə görünür.
-5. **Simulyator:** "Yaxınlıqda 3 SOS". **Qırmızı Həyəcan** kartı çıxır.
+5. **Simulyator:** "4 SOS yaxınlıqda" (4 fərqli vətəndaş, qayda özü işə düşür). **Qırmızı Həyəcan** kartı çıxır.
 6. **Dispetçer:** **Təsdiq**. Ən yaxın briqada `en_route` olur, ehtiyat məntəqə açılır və vətəndaş xəritəsində (6 saniyə ərzində) görünür.
 7. **Simulyator:** bir məntəqəni **96%** edin. İkinci həyəcan növü (məntəqə həddən artıq dolu) çıxır.
 8. **Vətəndaş:** "Təhlükəsizəm". Dispetçerdə "təhlükəsiz vətəndaşlar" sayı artır.

@@ -21,7 +21,7 @@
 2. Dispatcher (sign in first: `nigar@dac.az`) → Simulator → **close "Tbilisi yolu"** (on that route) → within 3 s the citizen sees "Yol bağlandı → alternativ marşrut" and a new route.
 3. Simulator → set the target shelter to **92%** → citizen is rerouted to the next shelter ("Məntəqə 90% dolub").
 4. Citizen taps **SOS → Tibbi yardım** → it appears in the dispatcher SOS feed and on the map.
-5. Simulator → **send 3 more SOS nearby** → a **Red Alert** card appears: "Əlavə Xilasetmə Briqadası Göndər və Yeni Toplanış Nöqtəsi Aç".
+5. Simulator → **"4 SOS nearby"** (4 distinct citizens, enough for the rule on their own) → a **Red Alert** card appears: "Əlavə Xilasetmə Briqadası Göndər və Yeni Toplanış Nöqtəsi Aç".
 6. Dispatcher clicks **Approve** → nearest team switches to `en_route`, the reserve shelter opens and appears on the citizen map.
 7. Simulator → push a shelter to **96%** → second alert type (shelter overload).
 8. Citizen taps **"Təhlükəsizəm"** → "safe citizens" KPI goes up.
