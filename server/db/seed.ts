@@ -1,6 +1,7 @@
 import { config } from "dotenv";
 config({ path: ".env.local" });
 
+import { existsSync, readFileSync } from "node:fs";
 import { EDGES, INACCESSIBLE_EDGES, NODES, haversineM } from "@/server/data/fallback-graph";
 
 const ZONES: Record<string, [number, number]> = {
@@ -32,6 +33,47 @@ const SHELTERS: [string, "shelter" | "park" | "stadium", string, string, number,
   ["Xətai Olimpiya Meydanı", "stadium", "Xətai", "n16", 6000, 800, false, true],
   ["Yasamal Ehtiyat Meydanı", "park", "Yasamal", "n1", 2000, 0, false, true],
 ];
+
+type SeedShelter = {
+  name: string;
+  type: "shelter" | "park" | "stadium";
+  zone: string;
+  lat: number;
+  lng: number;
+  node?: string;
+  capacity: number;
+  occupancy: number;
+  active: boolean;
+  reserve: boolean;
+  inaccessible: boolean;
+};
+
+// Real OSM places (server/data/osm-shelters.json, © OpenStreetMap contributors) with the demo occupancy story
+// applied by index: #1 at 85% and not accessible, #4 not accessible, last two = inactive reserves.
+// Falls back to the hand-written list if the file is missing so the seed never breaks.
+function loadShelters(): SeedShelter[] {
+  const file = "server/data/osm-shelters.json";
+  if (!existsSync(file)) {
+    return SHELTERS.map(([name, type, zone, node, capacity, occupancy, active, reserve]) => ({
+      name, type, zone, node, capacity, occupancy, active, reserve,
+      lat: NODES[node][1],
+      lng: NODES[node][2],
+      inaccessible: INACCESSIBLE_SHELTERS.has(name),
+    }));
+  }
+  const osm = JSON.parse(readFileSync(file, "utf8")) as Omit<SeedShelter, "occupancy" | "active" | "reserve" | "inaccessible">[];
+  const FILL = [0.12, 0.85, 0.18, 0.2, 0.1, 0.15, 0.12, 0.2];
+  return osm.map((sh, i) => {
+    const reserve = i >= osm.length - 2;
+    return {
+      ...sh,
+      occupancy: reserve ? 0 : Math.round(sh.capacity * FILL[i % FILL.length]),
+      active: !reserve,
+      reserve,
+      inaccessible: i === 1 || i === 4,
+    };
+  });
+}
 
 const TEAMS: [string, string][] = [
   ["Briqada Y-1", "Yasamal"],
@@ -92,19 +134,25 @@ async function main() {
     })),
   );
 
+  const shelterList = loadShelters();
+  const nearestNodeKey = (lat: number, lng: number) =>
+    Object.keys(NODES).reduce((best, k) =>
+      haversineM([lat, lng], [NODES[k][1], NODES[k][2]]) < haversineM([lat, lng], [NODES[best][1], NODES[best][2]]) ? k : best,
+    );
   await db.insert(s.shelters).values(
-    SHELTERS.map(([name, type, zone, node, capacity, occupancy, isActive, isReserve]) => ({
-      name,
-      type,
-      zoneId: zoneId[zone],
-      nodeId: nodeId[node],
-      lat: NODES[node][1],
-      lng: NODES[node][2],
-      capacity,
-      occupancy,
-      isActive,
-      isReserve,
-      isAccessible: !INACCESSIBLE_SHELTERS.has(name),
+    shelterList.map((sh) => ({
+      name: sh.name,
+      type: sh.type,
+      zoneId: zoneId[sh.zone],
+      nodeId: nodeId[sh.node ?? nearestNodeKey(sh.lat, sh.lng)],
+      lat: sh.lat,
+      lng: sh.lng,
+      capacity: sh.capacity,
+      occupancy: sh.occupancy,
+      isActive: sh.active,
+      isReserve: sh.reserve,
+      isAccessible: !sh.inaccessible,
+      // OSM has no capacity data: the number is estimated from area (see scripts/import-osm-shelters.ts)
     })),
   );
 

@@ -393,3 +393,7 @@ findRoute → trafficProvider.getEdgesWithMeta()
 - The SVG schematic was replaced by a real map: Leaflet + OpenStreetMap tiles (`components/city-map-inner.tsx`, loaded client-only via `next/dynamic`). Same `CityMap` props as before. Road lines are straight segments between approximate intersections, and tiles need internet.
 - The map has an **Update** button that refetches immediately; 3 s background polling stays so auto-reroute and Red Alert still appear on their own.
 - Landing page explains the problem and the 4-step flow; `/citizen` and `/dispatcher` show a guided 8-step demo panel.
+
+## Data attribution
+
+Shelter locations are real places (parks, stadiums, universities) from OpenStreetMap, © OpenStreetMap contributors, ODbL. Imported offline with `scripts/import-osm-shelters.ts` into `server/data/osm-shelters.json`. OSM has no capacity data, so **capacity is an estimate** (polygon area ÷ 2 m² per person for open spaces, ÷ 4 for buildings, clamped to 300–10 000). Occupancy is simulated.

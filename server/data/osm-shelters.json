@@ -1,0 +1,102 @@
+[
+  {
+    "name": "Bakı Dövlət Universiteti",
+    "type": "shelter",
+    "zone": "Yasamal",
+    "lat": 40.37380745,
+    "lng": 49.81093714166666,
+    "capacity": 10000,
+    "capacitySource": "estimated",
+    "areaM2": 92535.515625
+  },
+  {
+    "name": "ADA Universiteti",
+    "type": "shelter",
+    "zone": "Nəsimi",
+    "lat": 40.396841868571414,
+    "lng": 49.849862905714296,
+    "capacity": 10000,
+    "capacitySource": "estimated",
+    "areaM2": 95591.181640625
+  },
+  {
+    "name": "Bakı Olimpiya Stadionu",
+    "type": "stadium",
+    "zone": "Nərimanov",
+    "lat": 40.43002877037037,
+    "lng": 49.91950875185186,
+    "capacity": 10000,
+    "capacitySource": "estimated",
+    "areaM2": 70066.095703125
+  },
+  {
+    "name": "Dənizkənarı Milli Park",
+    "type": "park",
+    "zone": "Səbail",
+    "lat": 40.36741784189193,
+    "lng": 49.84478973310812,
+    "capacity": 10000,
+    "capacitySource": "estimated",
+    "areaM2": 418935.693359375
+  },
+  {
+    "name": "Dəmiryolçular Parkı",
+    "type": "park",
+    "zone": "Binəqədi",
+    "lat": 40.430463700000004,
+    "lng": 49.80750732903225,
+    "capacity": 10000,
+    "capacitySource": "estimated",
+    "areaM2": 72325.89453125
+  },
+  {
+    "name": "Gənclik Parkı / Zığ şossesi",
+    "type": "park",
+    "zone": "Xətai",
+    "lat": 40.35939868153846,
+    "lng": 49.952309830769224,
+    "capacity": 10000,
+    "capacitySource": "estimated",
+    "areaM2": 292239.263671875
+  },
+  {
+    "name": "Ağ Şəhər Bulvarı Bakı",
+    "type": "park",
+    "zone": "Xətai",
+    "lat": 40.37372535714283,
+    "lng": 49.87308225595234,
+    "capacity": 10000,
+    "capacitySource": "estimated",
+    "areaM2": 274342.916015625
+  },
+  {
+    "name": "Mərkəzi Park",
+    "type": "park",
+    "zone": "Səbail",
+    "lat": 40.372692432653054,
+    "lng": 49.82747357755101,
+    "capacity": 10000,
+    "capacitySource": "estimated",
+    "areaM2": 107154.568359375
+  },
+  {
+    "name": "Nizami Gəncəvi Parkı",
+    "type": "park",
+    "zone": "Xətai",
+    "lat": 40.379704540000006,
+    "lng": 49.89528425333334,
+    "capacity": 10000,
+    "capacitySource": "estimated",
+    "areaM2": 104025.533203125
+  },
+  {
+    "name": "Zəfər Parkı",
+    "type": "park",
+    "zone": "Səbail",
+    "lat": 40.376326648275864,
+    "lng": 49.86838796896553,
+    "capacity": 10000,
+    "capacitySource": "estimated",
+    "areaM2": 79521.775390625
+  }
+]
