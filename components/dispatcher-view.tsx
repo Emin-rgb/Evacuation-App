@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { CityMap } from "@/components/city-map";
+import { RiskBanner } from "@/components/risk-banner";
 import { SimulatorPanel } from "@/components/simulator-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -235,6 +236,7 @@ export function DispatcherView() {
         </span>
         <SimulatorPanel map={map} onChanged={load} />
       </div>
+      <RiskBanner variant="dispatcher" />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {kpis.map((k) => (
           <Card key={k.label}>

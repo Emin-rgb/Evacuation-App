@@ -289,8 +289,12 @@ All endpoints return JSON. Errors have one shape: `{ "error": "message" }` with 
 | PATCH  | `/api/traffic/roads/:id`  | `{ status: "open" \| "closed" }`               | Updated road (simulator)                                            |
 | PATCH  | `/api/shelters/:id`       | `{ occupancy }` (int ≥ 0, clamped to capacity) | Updated shelter + `occupancyPct`; runs detection                    |
 | POST   | `/api/simulate/sos-burst` | `{ lat, lng, count }` (1-20)                   | `201 { created, alertsCreated }`; runs detection                    |
+| GET    | `/api/risk`               | `zoneId?` (uuid)                               | Daily risk: earthquake, flood, seismic anomaly, `rerouteThresholdPct` |
+| PATCH  | `/api/simulate/risk`      | `{ mode: "none" \| "quake" \| "flood" }`       | `{ mode }`; demo override for the risk module                       |
 
-`reason` is a code (`road_closed` / `shelter_full`), never display text; the client translates it.
+`reason` is a code (`road_closed` / `shelter_full`), never display text; the client translates it. The same holds for risk `factors` (`{ key, value? }`).
+
+Risk data © USGS Earthquake Hazards Program and Open-Meteo (free, no API keys).
 
 ---
 

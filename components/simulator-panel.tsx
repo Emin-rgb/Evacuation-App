@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { api } from "@/lib/api";
 import { useT } from "@/lib/i18n/provider";
-import type { FailureMode, MapData, MapShelter } from "@/lib/types";
+import type { RiskSimulation, FailureMode, MapData, MapShelter } from "@/lib/types";
 
 function ShelterRow({ shelter, onChanged }: { shelter: MapShelter; onChanged: () => void }) {
   const t = useT();
@@ -98,6 +98,19 @@ export function SimulatorPanel({ map, onChanged }: { map: MapData; onChanged: ()
     }
   }
 
+  async function setRisk(mode: RiskSimulation) {
+    setBusyApi(true);
+    try {
+      await api.setRiskSimulation(mode);
+      toast.success(mode === "quake" ? t.risk.toastQuake : mode === "flood" ? t.risk.toastFlood : t.risk.toastOff);
+      onChanged();
+    } catch {
+      toast.error(t.simulator.error);
+    } finally {
+      setBusyApi(false);
+    }
+  }
+
   async function toggleRoad(id: string, closeIt: boolean) {
     setBusyRoad(id);
     try {
@@ -139,6 +152,20 @@ export function SimulatorPanel({ map, onChanged }: { map: MapData; onChanged: ()
               </Button>
               <Button variant="outline" disabled={busyApi} onClick={() => setApi("off")}>
                 {t.provider.simRestore}
+              </Button>
+            </div>
+          </section>
+          <section className="flex flex-col gap-2">
+            <h3 className="font-semibold">{t.risk.simTitle}</h3>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="destructive" disabled={busyApi} onClick={() => setRisk("quake")}>
+                {t.risk.simQuake}
+              </Button>
+              <Button variant="destructive" disabled={busyApi} onClick={() => setRisk("flood")}>
+                {t.risk.simFlood}
+              </Button>
+              <Button variant="outline" disabled={busyApi} onClick={() => setRisk("none")}>
+                {t.risk.simOff}
               </Button>
             </div>
           </section>

@@ -8,7 +8,7 @@ export type GraphEdge = {
   name?: string;
 };
 
-export type RouteOptions = { accessibleOnly?: boolean };
+export type RouteOptions = { accessibleOnly?: boolean; /** shelter "full" threshold in %, default FULL_PCT */ fullPct?: number };
 
 export type ShortestPaths = {
   dist: Map<string, number>;
@@ -92,7 +92,7 @@ export const FULL_PCT = 90;
 
 export type Candidate = { id: string; nodeId: string; capacity: number; occupancy: number; isAccessible?: boolean };
 
-/** Nearest reachable candidate by (walkIn + graph distance + walkOut); skips shelters at/above FULL_PCT. */
+/** Nearest reachable candidate by (walkIn + graph distance + walkOut); skips shelters at/above `opts.fullPct` (default FULL_PCT). */
 export function pickShelter<T extends Candidate>(
   candidates: T[],
   dist: Map<string, number>,
@@ -101,7 +101,7 @@ export function pickShelter<T extends Candidate>(
 ): { shelter: T; total: number } | null {
   let best: { shelter: T; total: number } | null = null;
   for (const s of candidates) {
-    if ((s.occupancy / s.capacity) * 100 >= FULL_PCT) continue;
+    if ((s.occupancy / s.capacity) * 100 >= (opts.fullPct ?? FULL_PCT)) continue;
     if (opts.accessibleOnly && s.isAccessible === false) continue;
     const d = dist.get(s.nodeId);
     if (d === undefined) continue;

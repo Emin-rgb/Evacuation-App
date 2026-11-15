@@ -36,3 +36,6 @@ export const sosBurstSchema = z.object({
 });
 
 export const providerModeSchema = z.object({ mode: z.enum(["off", "503", "slow"]) });
+
+export const riskQuerySchema = z.object({ zoneId: z.string().uuid().optional() });
+export const riskSimulationSchema = z.object({ mode: z.enum(["none", "quake", "flood"]) });

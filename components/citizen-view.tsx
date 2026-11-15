@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CitizenActions } from "@/components/citizen-actions";
+import { RiskBanner } from "@/components/risk-banner";
 import { CityMap } from "@/components/city-map";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -204,6 +205,11 @@ export function CitizenView() {
       )}
 
       <div className="flex flex-col gap-4">
+        <RiskBanner
+          variant="citizen"
+          zoneId={zoneId || undefined}
+          onShowShelters={() => document.getElementById("shelters")?.scrollIntoView({ behavior: "smooth" })}
+        />
         <div className="flex flex-col gap-2">
           <span className="text-sm font-medium">{t.citizen.district}</span>
           {zones.length === 0 ? (
@@ -301,7 +307,7 @@ export function CitizenView() {
           </div>
         )}
 
-        <h2 className="text-lg font-semibold">{t.citizen.nearest}</h2>
+        <h2 id="shelters" className="text-lg font-semibold">{t.citizen.nearest}</h2>
         {!origin ? (
           <p className="rounded-xl border p-4 text-sm text-muted-foreground">{t.citizen.pickDistrict}</p>
         ) : sheltersError ? (

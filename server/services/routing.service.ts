@@ -2,7 +2,9 @@ import { eq } from "drizzle-orm";
 import { db } from "@/server/db";
 import { roadNodes, shelters } from "@/server/db/schema";
 import { haversineM, nearestNode, type LatLng } from "@/server/engine/geo";
-import { FULL_PCT, buildPath, buildSteps, pickShelter, shortestPaths } from "@/server/engine/routing";
+import { buildPath, buildSteps, pickShelter, shortestPaths } from "@/server/engine/routing";
+import { fullPctFor } from "@/server/engine/risk";
+import { peekFloodLevel } from "@/server/services/risk.service";
 import { getCitizenRole } from "@/server/services/citizen.service";
 import { remapStaticEdges, trafficProvider } from "@/server/providers/traffic.provider";
 import type { RouteReason, RouteResult } from "@/lib/types";
@@ -14,7 +16,9 @@ export type RouteRequest = { prevShelterId?: string; citizenId?: string; targetS
 export async function findRoute(origin: LatLng, req: RouteRequest = {}): Promise<RouteResult | null> {
   const { prevShelterId, citizenId, targetShelterId } = req;
   const accessibleOnly = citizenId ? (await getCitizenRole(citizenId)) === "priority" : false;
-  const opts = { accessibleOnly };
+  // Task 20.6: while flood risk is high the "full" threshold drops from 90% to 80%
+  const fullPct = fullPctFor(await peekFloodLevel());
+  const opts = { accessibleOnly, fullPct };
   const [nodes, traffic, active] = await Promise.all([
     db.select().from(roadNodes),
     trafficProvider.getEdgesWithMeta(),
@@ -46,7 +50,7 @@ export async function findRoute(origin: LatLng, req: RouteRequest = {}): Promise
   if (prevShelterId) {
     if (prevShelterId !== s.id) {
       const old = active.find((x) => x.id === prevShelterId);
-      const oldFull = !old || (old.occupancy / old.capacity) * 100 >= FULL_PCT;
+      const oldFull = !old || (old.occupancy / old.capacity) * 100 >= fullPct;
       reason = oldFull ? "shelter_full" : "road_closed";
     } else {
       // same shelter: did closures force a detour vs. the all-open graph?

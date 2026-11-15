@@ -203,6 +203,23 @@ The four writes are submitted in one `db.batch`, which the Neon HTTP driver exec
 
 ---
 
+### 5.6 Daily risk (`risk.ts`, `risk.service.ts`)
+
+A proactive layer on top of the reactive evacuation flow. `GET /api/risk?zoneId=` returns an earthquake score, a flood score and a seismic anomaly flag, shown as a banner on both screens.
+
+- **Earthquake (0-100):** USGS M1+ events for Azerbaijan over 90 days (one request). The last 30 days are scored by magnitude band (M6+ 50 pts, M5 25, M4 10, M3 3, below 0.5); events in the last 7 days count double; cap 100; with no events a baseline of 5 applies (active seismic zone).
+- **Seismic anomaly:** today's UTC-day event count, maximum magnitude and energy (10^1.5M) are compared with the previous 89 days (quiet days count as zeros) using z-scores; above 2 sigma is anomalous. Standard deviation falls back to 1 so there is never a division by zero.
+- **Flood (0-100):** Open-Meteo forecast at the selected district's centre (Baku by default): today's rain band + saturation bonus (3-day total / 10, max 20), times a seasonal factor (spring snowmelt 1.5-1.7, autumn 1.0-1.3, summer and winter below 1).
+- **Levels:** minimal < 10 <= low < 25 <= moderate < 50 <= high < 70 <= critical. Scores are indicative, never presented as predictions.
+- **Behaviour hook:** while flood risk is high or critical, the shelter "full" threshold in routing drops from 90% to 80% (`fullPctFor`). Routing only *peeks* at the cached flood level (`peekFloodLevel`) so a route request never waits on the weather API; the banner warms the cache. Red Alert trigger rules are unchanged.
+- **Resilience:** one circuit breaker per upstream (USGS, Open-Meteo), 5 s timeout, 1 h in-memory cache, stale value on failure. If one source is down the other hazard still shows; if both are down and nothing is cached the API returns `source: "unavailable"` with HTTP 200 and the UI shows a friendly empty state.
+- **Demo simulation:** a `system_flags` row `risk_simulation` (`none | quake | flood`, switched with `PATCH /api/simulate/risk` from the Simulator panel) feeds synthetic input (an M6.1 plus aftershocks on top of real history, or 62/48/35 mm rain) through the same scoring code, so the banner is labelled "Simulation" but the maths is real.
+- The server returns factor codes (`eq_count_30d`, `flood_precip_3d`, ...); the UI translates them (AZ/EN).
+
+Data: USGS Earthquake Hazards Program and Open-Meteo.
+
+---
+
 ## 6. Real-time behaviour
 
 Both screens use **3-second polling** of plain JSON endpoints.

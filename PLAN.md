@@ -217,6 +217,20 @@ Each task ends with a **✅ Browser check**. Do them in order; tick them off whe
   - How to get better real data if OSM is thin: (1) the Overpass query above (most reliable, free, no key); (2) Baku city open data / the Emergency Ministry (FHN) published lists of assembly points, if available, entered by hand into the same JSON shape; (3) Google Places / Foursquare APIs (need a key and paid terms, not worth it for a 4-hour build). Whatever the source, capacity stays an estimate and the demo says so.
   - Files touched: `scripts/import-osm-shelters.ts` (new), `server/data/osm-shelters.json` (new), `server/db/seed.ts`, `server/data/fallback-graph.ts`, tests, README/docs. No API, schema or UI changes.
 
+- [x] **20. Daily Risk module (earthquake + flood, proactive layer)**
+  - Source: friend's FastAPI + Next.js anomaly code (USGS + Open-Meteo, no keys). Ported to our layers; the Python file is reference only, not run.
+  - [x] 20.1 `server/engine/risk.ts` (pure, unit-tested with `node:test`): `scoreEarthquake(features, now)`, `scoreFlood(daily, month)`, `seasonalFactor(month)`, `riskLevel(score)` (minimal/low/moderate/high/critical), `detectSeismicAnomaly(features, now)` (90-day z-score on count / max magnitude / energy; fix the friend's local-vs-UTC date mix by using UTC everywhere)
+  - [x] 20.2 `server/services/risk.service.ts`: fetch USGS + Open-Meteo through the existing circuit breaker (reuse Drop 2), cache ~1 h, fallback = last good snapshot, then a static "unavailable" result (never throws to the UI). Weather uses the **citizen's district coordinates** when given, otherwise Baku
+  - [x] 20.3 Demo override: one DB flag row (like the outage switch) `riskSimulation: none | quake | flood`; when set, the service returns a realistic M6.1 / heavy-rain result labelled "Simulation". Real data stays the default
+  - [x] 20.4 `app/api/risk/route.ts` (GET, optional `?zoneId=`) + `PATCH /api/simulate/risk` for the override (PATCH, like the provider switch); Zod at both boundaries; `lib/api.ts` client + shared types/schemas in `lib/`
+  - [x] 20.5 UI: `components/risk-banner.tsx` on `/citizen` (advisory: "Flood risk HIGH, know your nearest shelter" + button to the shelter list) and `/dispatcher` (both levels + "why" factors + pre-position hint when anomalous); skeleton, empty ("risk data unavailable") and error states; simulation control added to the existing Simulator
+  - [x] 20.6 Behavior hook (flood only): when flood risk ≥ high, the shelter auto-reroute threshold drops from 90% to 80% and the dispatcher sees a "pre-open reserve shelter" suggestion. Single constant in the engine, covered by a test; off when risk is lower so the existing demo flows are unchanged
+  - [x] 20.7 i18n: all new strings in `az.ts` and `en.ts`; sources shown in a footnote ("USGS, Open-Meteo; scores are indicative")
+  - [x] 20.8 Docs: README + `docs/technical.md` (risk scoring, sources, simulation), update **Decisions**; `npm test` green, `npm run build` once
+  - ✅ Browser check: banner shows real data on both screens; "simulate quake / heavy rain" flips the banner live; with flood simulated the 80% reroute triggers; the 3 core demo flows still pass with risk = none
+  - Optional, only if time: 20.9 Red Alert context. An SOS cluster on an anomalous seismic day (or high flood risk for flood SOS) gets a "high confidence" badge on the alert card; does NOT change the Red Alert trigger rules
+  - Order: 20.1 → 20.2 → 20.4 → 20.5 → 20.3 → 20.6 → 20.7 → 20.8. No schema change beyond one flag row; no new dependency.
+
 - [ ] **17. Polish (demo-polish skill): CODE FREEZE at 3:15**
   - [ ] 16.1 Re-seed to the demo starting state; rehearse the 8-step demo script twice
   - [ ] 16.2 Check every screen's loading / empty / error states, mobile width for `/citizen`
@@ -236,4 +250,5 @@ Each task ends with a **✅ Browser check**. Do them in order; tick them off whe
 - Drop 2: the breaker is a pure engine class (testable); fallback = last good snapshot, then a static bundled graph (never the failing provider); the outage switch lives in one DB flag row so it works across serverless instances. No new dependency.
 - Task 18 (supersedes the "SVG, no tiles" decisions above): real map with Leaflet + OpenStreetMap, approved by the user. Reason: the schematic confused viewers; a real city map is self-explanatory. Trade-off: tiles need internet during the demo. Clarity comes from a landing explainer + guided demo panel, not from more features.
 - Task 19: use real OSM places for shelters (parks, stadiums, schools), not `amenity=shelter` (those are gazebos); capacity is an estimate from area and is labelled as such.
+- Task 20: risk module is a proactive layer on top of the reactive flow; real USGS/Open-Meteo data with a demo simulation switch (live data is calm on stage); scores are indicative, never presented as predictions. Does not change Red Alert trigger rules.
 - NOT building: real auth, real map/traffic/geocoding APIs, WebSockets, SMS/push, admin CRUD, AI feature, charts lib, Docker, multi-city.

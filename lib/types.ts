@@ -92,3 +92,24 @@ export type DashboardData = {
   alerts: DashboardAlert[];
   closedEdges: { id: string; name: string }[];
 };
+
+export type RiskLevel = "minimal" | "low" | "moderate" | "high" | "critical";
+export type RiskSimulation = "none" | "quake" | "flood";
+/** Codes, not text: the UI maps `key` to AZ/EN copy. */
+export type RiskFactor = { key: string; value?: number };
+export type HazardRisk = { score: number; level: RiskLevel; factors: RiskFactor[] };
+export type SeismicAnomaly = {
+  isAnomalous: boolean;
+  metrics: { metric: "count" | "magnitude" | "energy"; todayValue: number; baselineMean: number; zScore: number; isAnomalous: boolean }[];
+};
+export type RiskSnapshot = {
+  generatedAt: string;
+  /** "simulation" while a demo override is on; "unavailable" when both data sources failed and nothing is cached */
+  source: "live" | "simulation" | "unavailable";
+  simulation: RiskSimulation;
+  earthquake: HazardRisk | null;
+  flood: HazardRisk | null;
+  anomaly: SeismicAnomaly | null;
+  /** shelter "full" threshold currently used by routing (80 while flood risk is high) */
+  rerouteThresholdPct: number;
+};
