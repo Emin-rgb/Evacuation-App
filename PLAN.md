@@ -108,11 +108,11 @@ Each task ends with a **✅ Browser check**. Do them in order; tick them off whe
   - [x] 9.3 Reroute banner with the reason + old vs new shelter; map updates
   - ✅ Close a road on the route → citizen banner "Yol bağlandı" + new route; set shelter to 92% → "90% dolub" + next shelter
 
-- [ ] **10. SOS + "I'm safe"**
-  - [ ] 10.1 `POST /api/citizens` → uuid stored in localStorage (try/catch)
-  - [ ] 10.2 `POST /api/sos` `{citizenId, type, lat, lng}` → saves the SOS, citizen status `sos`
-  - [ ] 10.3 Sticky bottom bar: big red SOS button → dialog with 4 types (Yanğın / Dağıntı / Su basması / Tibbi yardım)
-  - [ ] 10.4 `PATCH /api/citizens/:id` `{status:'safe'}` + "Təhlükəsizəm" button with a confirmed state
+- [x] **10. SOS + "I'm safe"**
+  - [x] 10.1 `POST /api/citizens` → uuid stored in localStorage (try/catch)
+  - [x] 10.2 `POST /api/sos` `{citizenId, type, lat, lng}` → saves the SOS, citizen status `sos`
+  - [x] 10.3 Sticky bottom bar: big red SOS button → dialog with 4 types (Yanğın / Dağıntı / Su basması / Tibbi yardım)
+  - [x] 10.4 `PATCH /api/citizens/:id` `{status:'safe'}` + "Təhlükəsizəm" button with a confirmed state
   - ✅ SOS from `/citizen` appears in the dispatcher feed + map within 3 s; "I'm safe" increments the KPI
 
 - [ ] **11. Crisis Red Alert engine**

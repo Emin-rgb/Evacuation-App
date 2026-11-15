@@ -1,10 +1,23 @@
-import type { DashboardData, MapData, NearestShelter, RoadStatus, RouteResult, TrafficEdge, Zone } from "@/lib/types";
+import type { SosType, DashboardData, MapData, NearestShelter, RoadStatus, RouteResult, TrafficEdge, Zone } from "@/lib/types";
 
 async function get<T>(url: string): Promise<T> {
   const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) {
     const body = await res.json().catch(() => null);
     throw new Error(body?.error ?? `Request failed (${res.status})`);
+  }
+  return res.json() as Promise<T>;
+}
+
+async function post<T>(url: string, body: unknown): Promise<T> {
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => null);
+    throw new Error(err?.error ?? `Request failed (${res.status})`);
   }
   return res.json() as Promise<T>;
 }
@@ -34,5 +47,9 @@ export const api = {
     patch<{ id: string; name: string; status: RoadStatus }>(`/api/traffic/roads/${id}`, { status }),
   setShelterOccupancy: (id: string, occupancy: number) =>
     patch<{ id: string; name: string; occupancyPct: number }>(`/api/shelters/${id}`, { occupancy }),
+  createCitizen: (lat?: number, lng?: number) => post<{ id: string }>("/api/citizens", { lat, lng }),
+  markSafe: (id: string) => patch<{ id: string; status: string }>(`/api/citizens/${id}`, { status: "safe" }),
+  sendSos: (citizenId: string, type: SosType, lat: number, lng: number) =>
+    post<{ id: string }>("/api/sos", { citizenId, type, lat, lng }),
   getTraffic: () => get<TrafficEdge[]>("/api/traffic"),
 };

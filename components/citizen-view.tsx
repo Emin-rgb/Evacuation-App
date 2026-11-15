@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { CitizenActions } from "@/components/citizen-actions";
 import { CityMap } from "@/components/city-map";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -240,6 +241,7 @@ export function CitizenView() {
           ))
         )}
       </div>
+      <CitizenActions origin={origin} />
     </div>
   );
 }
