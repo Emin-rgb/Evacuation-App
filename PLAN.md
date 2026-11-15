@@ -242,6 +242,23 @@ Each task ends with a **✅ Browser check**. Do them in order; tick them off whe
   - Optional, only if time: 20.9 Red Alert context. An SOS cluster on an anomalous seismic day (or high flood risk for flood SOS) gets a "high confidence" badge on the alert card; does NOT change the Red Alert trigger rules
   - Order: 20.1 → 20.2 → 20.4 → 20.5 → 20.3 → 20.6 → 20.7 → 20.8. No schema change beyond one flag row; no new dependency.
 
+- [x] **21. Real accounts replace PINs** (done; roles `dispatcher` + `supervisor`; lockout 5 failures → 5 min; 3 demo accounts in the README)
+  - Why: Drop 3 shipped two shared PINs (`DISPATCHER_PIN`, `VIEWER_PIN`) to keep it small. For the jury, "real app" means named users, hashed passwords and an audit trail. Everything else from 15.3 stays (rate limits, duplicate filter, JWT cookie, `guard()`, route guards, load script).
+  - Roles: `dispatcher` (everything) and `supervisor` (read-only; renamed from `viewer`). Citizens stay anonymous by design (an SOS must work with zero friction); documented as a decision.
+  - [x] 21.1 Schema (additive, `db:push`): table `users` (`id` uuid PK, `email` text unique, `name` text, `role` enum `dispatcher|supervisor`, `password_hash` text, `created_at`); `alerts` gets nullable `handled_by` uuid → `users.id` and `handled_at` timestamp (who approved or dismissed)
+  - [x] 21.2 Engine (pure, unit-tested): `server/engine/password.ts` `hashPassword` / `verifyPassword` with `scrypt` from `node:crypto` (random 16-byte salt, format `scrypt$N$salt$hash`, `timingSafeEqual`); `rbac.ts` rename `viewer` → `supervisor` (matrix unchanged); `jwt.ts` payload gains `sub` (user id) and `name`
+  - [x] 21.3 Service + routes: `server/services/user.service.ts` (`findByEmail`, `verifyLogin` that hashes against a dummy hash when the email is unknown so timing does not reveal accounts); `POST /api/auth/login {email, password}` (Zod; generic "Wrong email or password"; keep 5/min per IP and add 5/min per email; keep the 429 + Retry-After); `/api/auth/me` returns `{ id, name, role } | null`; `guard()` returns the user so routes can pass `userId`
+  - [x] 21.4 Audit: `approveAlert(id, userId)` and `dismissAlert(id, userId)` set `handled_by` / `handled_at` in the same update that changes the status (no extra round trip); dashboard alert rows and the approve toast show "approved by <name>"; Red Alert history is not shown beyond that (keep scope small)
+  - [x] 21.5 Seed: `seed.ts` upserts 3 demo users without wiping others: 2 dispatchers + 1 supervisor; demo passwords are fixed and documented in the README (user chose simple ones). Remove `DISPATCHER_PIN` / `VIEWER_PIN` from `server/auth.ts`, `.env.example`, README; keep `JWT_SECRET`
+  - [x] 21.6 UI: `components/dispatcher-gate.tsx` becomes an email + password form (labels, autocomplete `username` / `current-password`, show/hide password, error and 429 messages, loading state); header chip shows the user's name and role; viewer-only copy says "Supervisor". All new strings in `az.ts` and `en.ts`; remove the unused `auth.pin` keys
+  - [x] 21.7 Tests: password hash/verify (right, wrong, tampered hash, two hashes of one password differ); JWT with `sub`; rbac matrix with `supervisor`; `npm run build` once (not while `npm run dev` is running)
+  - [x] 21.8 Docs: README (accounts table, env vars, API: login/me), `docs/technical.md` section 8 (replace the "PIN-based" gap with: hashed passwords, audit trail; remaining gaps: no self-service signup, no password reset, no MFA, no account lockout beyond rate limits), `docs/ai-declaration.md`, **Decisions** below
+  - ✅ (verified with curl; login UI checked in browser: see notes) Check: wrong password and unknown email give the same 401 message; supervisor gets 403 on approve and sees disabled buttons; dispatcher approve works and the alert card shows who approved it; the three core demo flows still work after login; load script still passes (<300 ms mean)
+  - Order: 21.1 → 21.2 → 21.3 → 21.5 → 21.4 → 21.6 → 21.7 → 21.8. Files touched: `server/db/schema.ts`, `server/db/seed.ts`, `server/engine/{password,jwt,rbac}.ts`, `server/auth.ts`, `server/services/{user,alert,dashboard}.service.ts`, `app/api/auth/**`, approve/dismiss routes, `components/dispatcher-gate.tsx`, `components/dispatcher-view.tsx`, `lib/{api,schemas,types}.ts`, i18n, docs. No new dependency; citizen flows untouched.
+  - Resolved by the user: simple demo accounts, README documents them, "supervisor" is fine, lock the account after repeated failures (5 failures → 5 min).
+  - Note: the dashboard lists only open alerts, so "approved by" shows in the approve toast and in the DB (`handled_by`), not in a history list.
+  - (was) Open questions: (1) demo emails/names and the demo password; (2) is "supervisor" the right name for the read-only role; (3) should a failed login lock the account for a few minutes, or are rate limits enough (default: rate limits only).
+
 - [ ] **17. Polish (demo-polish skill): CODE FREEZE at 3:15**
   - [ ] 16.1 Re-seed to the demo starting state; rehearse the 8-step demo script twice
   - [ ] 16.2 Check every screen's loading / empty / error states, mobile width for `/citizen`
@@ -251,7 +268,7 @@ Each task ends with a **✅ Browser check**. Do them in order; tick them off whe
 
 - SVG schematic map instead of Leaflet/Google: no new dependency, no external outage risk.
 - 3 s polling instead of WebSockets: simple and robust.
-- Anonymous citizens (uuid in localStorage), no auth; dispatcher PIN only if the security drop asks.
+- Anonymous citizens (uuid in localStorage), no auth; dispatcher accounts added by the security drop (Task 21).
 - Crisis detection runs synchronously after each write (SOS, occupancy), so no background jobs.
 - Pure engine functions in `server/engine/` keep logic testable and easy to explain.
 - Tests: unit tests only on the engine, using built-in `node:test` (approved exception to "no tests unless asked").
@@ -262,5 +279,6 @@ Each task ends with a **✅ Browser check**. Do them in order; tick them off whe
 - Task 18 (supersedes the "SVG, no tiles" decisions above): real map with Leaflet + OpenStreetMap, approved by the user. Reason: the schematic confused viewers; a real city map is self-explanatory. Trade-off: tiles need internet during the demo. Clarity comes from a landing explainer + guided demo panel, not from more features.
 - Task 19: use real OSM places for shelters (parks, stadiums, schools), not `amenity=shelter` (those are gazebos); capacity is an estimate from area and is labelled as such.
 - Task 20: risk module is a proactive layer on top of the reactive flow; real USGS/Open-Meteo data with a demo simulation switch (live data is calm on stage); scores are indicative, never presented as predictions. Does not change Red Alert trigger rules.
-- Drop 3: flood defence is layered and cheap-first (limiter before DB → Zod bounds → duplicate filter → distinct-citizen detector). The in-memory limiter is per serverless instance (honest trade-off; a shared store like Upstash would be the production step). RBAC uses a hand-rolled HS256 JWT on `node:crypto` in an httpOnly cookie with PIN login and two roles (viewer, dispatcher), to avoid a new dependency; this replaces the earlier "no auth" stance only for the dispatcher side.
-- NOT building: real auth (user accounts/OAuth), real map/traffic/geocoding APIs, WebSockets, SMS/push, admin CRUD, AI feature, charts lib, Docker, multi-city.
+- Drop 3: flood defence is layered and cheap-first (limiter before DB → Zod bounds → duplicate filter → distinct-citizen detector). The in-memory limiter is per serverless instance (honest trade-off; a shared store like Upstash would be the production step). RBAC uses a hand-rolled HS256 JWT on `node:crypto` in an httpOnly cookie, to avoid a new dependency; this replaces the earlier "no auth" stance only for the dispatcher side. (The first version used shared PINs; Task 21 replaced them with real accounts.)
+- Task 21 (done): replaces the shared PINs with real user accounts (scrypt-hashed passwords, JWT with user id, `handled_by` audit on alerts); citizens stay anonymous because an SOS must work with zero friction.
+- NOT building: OAuth / self-service signup / password reset / MFA, real map/traffic/geocoding APIs, WebSockets, SMS/push, admin CRUD, AI feature, charts lib, Docker, multi-city.

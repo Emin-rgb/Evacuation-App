@@ -68,9 +68,7 @@ Open <http://localhost:3000>. Use two browser windows side by side: `/citizen` (
 | ----------------------- | -------- | ------------------------------------------------------------------ |
 | `DATABASE_URL`          | yes      | Postgres connection string used by the app, `drizzle-kit` and seed |
 | `DATABASE_URL_UNPOOLED` | no       | Direct (non-pooled) connection, listed in `.env.example`           |
-| `JWT_SECRET`            | prod     | HMAC secret for dispatcher session tokens (dev falls back to a fixed dev value) |
-| `DISPATCHER_PIN`        | prod     | PIN for the `dispatcher` role (dev default `2222`)                 |
-| `VIEWER_PIN`            | prod     | PIN for the read-only `viewer` role (dev default `1111`)           |
+| `JWT_SECRET`            | prod     | HMAC secret that signs dispatcher session cookies (dev falls back to a fixed value) |
 | `GEMINI_API_KEY`        | no       | Not used: the product has no AI/LLM feature                        |
 
 ### Scripts
@@ -274,7 +272,7 @@ Picks an available team (same zone preferred, otherwise any) and a reserve inact
 
 ## API reference
 
-All endpoints return JSON. Errors have one shape: `{ "error": "message" }` with status `400` (validation), `401` (no session), `403` (wrong role), `404` (not found), `409` (alert already handled), `429` (rate limit) or `500`. Approve/dismiss, all `/api/simulate/*`, road and shelter PATCH require the `dispatcher` role. Every input is validated with Zod (`lib/schemas.ts`).
+All endpoints return JSON. Errors have one shape: `{ "error": "message" }` with status `400` (validation), `401` (no session), `403` (wrong role), `404` (not found), `409` (alert already handled), `429` (rate limit) or `500`. Approve/dismiss (recorded with the user who did it), all `/api/simulate/*`, road and shelter PATCH require the `dispatcher` role. Every input is validated with Zod (`lib/schemas.ts`).
 
 | Method | Path                      | Input                                          | Returns                                                             |
 | ------ | ------------------------- | ---------------------------------------------- | ------------------------------------------------------------------- |
@@ -287,9 +285,9 @@ All endpoints return JSON. Errors have one shape: `{ "error": "message" }` with 
 | POST   | `/api/citizens`           | `{ lat?, lng? }`                               | `201 { id, status }`                                                |
 | PATCH  | `/api/citizens/:id`       | `{ status: "safe" }`                           | `{ id, status }`                                                    |
 | POST   | `/api/sos`                | `{ citizenId, type, lat, lng }` (Baku area)    | `201 { id, type, status }`; `200 { …, duplicate: true }` for a repeat; `429` when rate-limited |
-| POST   | `/api/auth/login`         | `{ pin }`                                      | `{ role }` + httpOnly session cookie; `401` wrong PIN, `429` too many attempts |
+| POST   | `/api/auth/login`         | `{ email, password }`                          | `{ user }` + httpOnly session cookie; `401` wrong credentials, `423` account locked (5 min after 5 failures), `429` rate limit |
 | POST   | `/api/auth/logout`        |                                                | Clears the session cookie                                           |
-| GET    | `/api/auth/me`            |                                                | `{ role: "viewer" \| "dispatcher" \| null }`                        |
+| GET    | `/api/auth/me`            |                                                | `{ user: { id, name, role } \| null }`                              |
 | POST   | `/api/alerts/:id/approve` |                                                | `{ id, status, team, shelter, assignedSos }`                        |
 | POST   | `/api/alerts/:id/dismiss` |                                                | `{ id, status: "dismissed" }`                                       |
 | PATCH  | `/api/traffic/roads/:id`  | `{ status: "open" \| "closed" }`               | Updated road (simulator)                                            |
@@ -401,12 +399,20 @@ POST /api/sos ─▶ per-IP limit (20/min) ─▶ Zod (Baku bounds) ─▶ per-c
 ```
 
 - **Rate limit + duplicate filter:** `server/engine/rate-limit.ts`, `server/engine/sos-guard.ts` (pure, tested). Rejected requests never reach the DB. The detector counts *distinct citizens*, so repeats cannot fake a Red Alert. Limiter is in memory per serverless instance (trade-off; a shared store such as Upstash is the production step).
-- **RBAC:** PIN login → HS256 JWT (`server/engine/jwt.ts`, `node:crypto`, no new dependency) in an httpOnly, SameSite=Lax cookie (8 h). Roles: `viewer` (read dashboard) and `dispatcher` (also approve/dismiss, simulator, road/shelter writes). Login attempts are limited to 5/min per IP. Citizen endpoints stay open.
+- **Accounts + RBAC:** real users in a `users` table; passwords are hashed with `scrypt` and a random salt (`server/engine/password.ts`), never stored or logged in clear text. Login (`email` + `password`) issues an HS256 JWT (`server/engine/jwt.ts`, `node:crypto`, no new dependency) with `sub`, `name`, `role`, in an httpOnly, SameSite=Lax cookie (8 h). Unknown email and wrong password give the same `401` and take the same time. After 5 wrong passwords the account is locked for 5 minutes (`423`); login is also rate-limited per IP and per email. Roles: `supervisor` (read the dashboard) and `dispatcher` (also approve/dismiss, simulator, road/shelter writes). Approve and dismiss store `handled_by` / `handled_at` on the alert (audit trail) and the approve toast shows who approved. Citizens stay anonymous on purpose: an SOS must work with zero friction.
 
-| Action                              | No session | viewer | dispatcher |
-| ----------------------------------- | ---------- | ------ | ---------- |
-| Citizen: shelters, route, SOS, safe | yes        | yes    | yes        |
-| `GET /api/dashboard`                | 401        | yes    | yes        |
+**Demo accounts** (created by `npm run db:seed`, which never deletes users; change or delete them before any real use):
+
+| Email                | Password        | Name              | Role       |
+| -------------------- | --------------- | ----------------- | ---------- |
+| `nigar@dac.az`       | `dispatcher123` | Nigar Huseynova   | dispatcher |
+| `rauf@dac.az`        | `dispatcher123` | Rauf Aliyev       | dispatcher |
+| `supervisor@dac.az`  | `supervisor123` | Leyla Supervisor  | supervisor |
+
+| Action                              | No session | supervisor | dispatcher |
+| ----------------------------------- | ---------- | ---------- | ---------- |
+| Citizen: shelters, route, SOS, safe | yes        | yes        | yes        |
+| `GET /api/dashboard`                | 401        | yes        | yes        |
 | Approve / dismiss alert, simulator, road/shelter PATCH | 401 | 403 | yes |
 
 - **Latency:** the SOS write is 2 DB round trips (citizen + recent SOS + zone in parallel, then insert + citizen update in parallel); detection reads only the last 5 min and runs after the response, single-flight. Dashboard SOS feed is capped at 100 (KPI counts stay exact via `count()`). Index `sos_signals(citizen_id, created_at)`.

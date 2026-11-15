@@ -102,6 +102,7 @@ export function DispatcherView({ role, onUnauthorized }: { role: SessionRole; on
         const r = await api.approveAlert(id);
         toast.success(t.dispatcher.approveToast, {
           description: [
+            `${t.auth.approvedBy}: ${r.approvedBy}`,
             r.team ? `${t.dispatcher.toastTeam}: ${r.team.name}` : t.dispatcher.toastNoTeam,
             r.shelter
               ? `${t.dispatcher.toastShelter}: ${r.shelter.name}`
@@ -237,9 +238,6 @@ export function DispatcherView({ role, onUnauthorized }: { role: SessionRole; on
                 : t.provider.chipLive}
           </Badge>
         )}
-        <span className="text-muted-foreground mr-auto hidden text-xs md:inline">
-          {t.dispatcher.simulatorHelp}
-        </span>
         {canDispatch && <SimulatorPanel map={map} onChanged={load} />}
       </div>
       <RiskBanner variant="dispatcher" />
@@ -262,9 +260,8 @@ export function DispatcherView({ role, onUnauthorized }: { role: SessionRole; on
 
       <section className="flex flex-col gap-2">
         <h2 className="text-lg font-semibold">{t.dispatcher.alerts}</h2>
-        <p className="text-muted-foreground text-sm">{t.dispatcher.alertsHelp}</p>
         {data.alerts.length === 0 ? (
-          <Empty>{`${t.dispatcher.noAlerts} ${t.dispatcher.noAlertsHint}`}</Empty>
+          <Empty>{t.dispatcher.noAlerts}</Empty>
         ) : (
           data.alerts.map((a) => (
             <div

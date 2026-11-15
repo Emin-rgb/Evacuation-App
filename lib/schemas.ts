@@ -31,7 +31,10 @@ export const sosCreateSchema = z.object({
   lat: z.number().min(BAKU_BOUNDS.minLat).max(BAKU_BOUNDS.maxLat),
   lng: z.number().min(BAKU_BOUNDS.minLng).max(BAKU_BOUNDS.maxLng),
 });
-export const loginSchema = z.object({ pin: z.string().min(1).max(64) });
+export const loginSchema = z.object({
+  email: z.string().trim().toLowerCase().email().max(120),
+  password: z.string().min(1).max(128),
+});
 export const sosBurstSchema = z.object({
   lat: z.number().min(-90).max(90),
   lng: z.number().min(-180).max(180),

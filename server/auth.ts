@@ -1,39 +1,21 @@
-import { createHash, timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { signJwt, verifyJwt } from "@/server/engine/jwt";
-import { canDo, isRole, type Action, type Role } from "@/server/engine/rbac";
+import { canDo, isRole, type Action } from "@/server/engine/rbac";
+import type { SessionUser } from "@/server/services/user.service";
 
 export const SESSION_COOKIE = "dac_session";
 export const SESSION_TTL_SEC = 8 * 60 * 60;
 
 const isProd = process.env.NODE_ENV === "production";
 
-// Dev-only defaults so `npm run dev` works without setup; production must set real values.
+// Dev-only fallback so `npm run dev` works without setup; production must set JWT_SECRET.
 function secret(): string | null {
   return process.env.JWT_SECRET ?? (isProd ? null : "dev-only-secret");
 }
-function pins(): Record<Role, string | undefined> {
-  return {
-    dispatcher: process.env.DISPATCHER_PIN ?? (isProd ? undefined : "2222"),
-    viewer: process.env.VIEWER_PIN ?? (isProd ? undefined : "1111"),
-  };
-}
 
-const sha = (s: string) => createHash("sha256").update(s).digest();
-
-/** Constant-time PIN check → role, or null. */
-export function roleForPin(pin: string): Role | null {
-  const configured = pins();
-  for (const role of ["dispatcher", "viewer"] as const) {
-    const expected = configured[role];
-    if (expected && timingSafeEqual(sha(pin), sha(expected))) return role;
-  }
-  return null;
-}
-
-export function issueToken(role: Role): string | null {
+export function issueToken(user: SessionUser): string | null {
   const s = secret();
-  return s ? signJwt(role, s, SESSION_TTL_SEC) : null;
+  return s ? signJwt({ sub: user.id, name: user.name, role: user.role }, s, SESSION_TTL_SEC) : null;
 }
 
 function readCookie(req: Request, name: string): string | null {
@@ -46,20 +28,20 @@ function readCookie(req: Request, name: string): string | null {
   return null;
 }
 
-export function getSessionRole(req: Request): Role | null {
+export function getSession(req: Request): SessionUser | null {
   const s = secret();
   const token = readCookie(req, SESSION_COOKIE);
   if (!s || !token) return null;
   const p = verifyJwt(token, s);
-  return p && isRole(p.role) ? p.role : null;
+  return p && isRole(p.role) ? { id: p.sub, name: p.name, role: p.role } : null;
 }
 
 /** Returns an error response (401 / 403) or null when the caller may proceed. */
 export function guard(req: Request, action: Action): NextResponse | null {
   if (!secret()) return NextResponse.json({ error: "Auth not configured" }, { status: 503 });
-  const role = getSessionRole(req);
-  if (!role) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!canDo(role, action)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const user = getSession(req);
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!canDo(user.role, action)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   return null;
 }
 

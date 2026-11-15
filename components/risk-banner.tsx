@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Alert02Icon } from "@hugeicons/core-free-icons";
+import { Alert02Icon, ArrowDown01Icon } from "@hugeicons/core-free-icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -48,15 +48,40 @@ function LevelBadge({ level }: { level: RiskLevel }) {
   return <Badge className={cn("border-transparent", LEVEL_STYLE[level])}>{t.risk.levels[level]}</Badge>;
 }
 
-function Shell({ children, tone }: { children: React.ReactNode; tone: "calm" | "warn" }) {
+function Shell({
+  children,
+  tone,
+  title,
+  large,
+  badge,
+}: {
+  children: React.ReactNode;
+  tone: "calm" | "warn";
+  title: string;
+  large?: boolean;
+  badge: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(true);
   return (
-    <div
-      className={cn(
-        "flex flex-col gap-3 rounded-xl border p-4",
-        tone === "warn" && "border-amber-500 bg-amber-500/10",
-      )}
-    >
-      {children}
+    <div className={cn("rounded-xl border", tone === "warn" && "border-amber-500 bg-amber-500/10")}>
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center justify-between gap-2 p-4 text-left"
+      >
+        <span className="flex items-center gap-2">
+          <h2 className={cn("font-semibold", large && "text-lg")}>{title}</h2>
+          {badge}
+        </span>
+        <HugeiconsIcon
+          icon={ArrowDown01Icon}
+          size={18}
+          aria-hidden="true"
+          className={cn("shrink-0 transition-transform motion-reduce:transition-none", open && "rotate-180")}
+        />
+      </button>
+      {open && <div className="flex flex-col gap-3 px-4 pb-4">{children}</div>}
     </div>
   );
 }
@@ -110,11 +135,7 @@ export function RiskBanner({
   if (variant === "citizen") {
     const message = floodHigh ? t.risk.citizenFlood : quakeHigh ? t.risk.citizenQuake : t.risk.citizenCalm;
     return (
-      <Shell tone={floodHigh || quakeHigh ? "warn" : "calm"}>
-        <div className="flex items-center justify-between gap-2">
-          <h2 className="font-semibold">{t.risk.title}</h2>
-          {sim}
-        </div>
+      <Shell tone={floodHigh || quakeHigh ? "warn" : "calm"} title={t.risk.title} badge={sim}>
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
           {hazards.map(
             ({ name, hazard }) =>
@@ -137,11 +158,7 @@ export function RiskBanner({
   }
 
   return (
-    <Shell tone={floodHigh || quakeHigh ? "warn" : "calm"}>
-      <div className="flex items-center justify-between gap-2">
-        <h2 className="text-lg font-semibold">{t.risk.title}</h2>
-        {sim}
-      </div>
+    <Shell tone={floodHigh || quakeHigh ? "warn" : "calm"} title={t.risk.title} large badge={sim}>
       <div className="grid gap-4 md:grid-cols-2">
         {hazards.map(({ name, hazard }) => (
           <div key={name} className="flex flex-col gap-2">

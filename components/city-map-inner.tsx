@@ -295,6 +295,14 @@ export default function CityMapInner({
 }: CityMapProps) {
   const t = useT();
   const mapRef = useRef<L.Map | null>(null);
+  // Leaflet cannot re-attach to a container it already used. When the route is hidden and shown
+  // again (Cache Components keeps it mounted) or React re-runs effects, build a brand-new map.
+  const [instance, setInstance] = useState(0);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- new map instance per activation
+    setInstance((n) => n + 1);
+    return () => setInstance(0);
+  }, []);
   const [layers, setLayers] = useState<Layers>({ roads: true, shelters: true, sos: true });
   const [resetSignal, setResetSignal] = useState(0);
   const [tileErrors, setTileErrors] = useState(0);
@@ -369,137 +377,140 @@ export default function CityMapInner({
         role="region"
         aria-label={t.map.ariaLabel}
       >
-        <MapContainer
-          ref={mapRef}
-          center={center}
-          zoom={12}
-          zoomControl={false}
-          scrollWheelZoom
-          className="size-full"
-        >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            maxZoom={19}
-            eventHandlers={{
-              tileerror: () => setTileErrors((n) => n + 1),
-              tileload: () => setTileErrors(0),
-            }}
-          />
-          <ViewController all={all} focus={focus} fitKey={fitKey} resetSignal={resetSignal} />
-
-          {zoneIcons.map(({ z, icon }) => (
-            <Marker
-              key={z.id}
-              position={[z.lat, z.lng]}
-              icon={icon}
-              interactive={false}
-              keyboard={false}
+        {instance > 0 && (
+          <MapContainer
+            key={instance}
+            ref={mapRef}
+            center={center}
+            zoom={12}
+            zoomControl={false}
+            scrollWheelZoom
+            className="size-full"
+          >
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              maxZoom={19}
+              eventHandlers={{
+                tileerror: () => setTileErrors((n) => n + 1),
+                tileload: () => setTileErrors(0),
+              }}
             />
-          ))}
+            <ViewController all={all} focus={focus} fitKey={fitKey} resetSignal={resetSignal} />
 
-          {layers.roads &&
-            data.edges.map((e) => {
-              const a = nodeById.get(e.fromNodeId);
-              const b = nodeById.get(e.toNodeId);
-              if (!a || !b) return null;
-              const closed = e.status === "closed";
-              return (
-                <Polyline
-                  key={`${e.id}-${closed}`}
-                  positions={[
-                    [a.lat, a.lng],
-                    [b.lat, b.lng],
-                  ]}
-                  pathOptions={{
-                    color: closed ? "#ef4444" : "#64748b",
-                    weight: closed ? 5 : 3,
-                    opacity: closed ? 0.95 : 0.55,
-                    dashArray: closed ? "8 8" : undefined,
-                    lineCap: "round",
-                  }}
-                />
-              );
-            })}
+            {zoneIcons.map(({ z, icon }) => (
+              <Marker
+                key={z.id}
+                position={[z.lat, z.lng]}
+                icon={icon}
+                interactive={false}
+                keyboard={false}
+              />
+            ))}
 
-          {layers.roads &&
-            data.edges
-              .filter((e) => e.status === "closed")
-              .map((e) => {
+            {layers.roads &&
+              data.edges.map((e) => {
                 const a = nodeById.get(e.fromNodeId);
                 const b = nodeById.get(e.toNodeId);
                 if (!a || !b) return null;
+                const closed = e.status === "closed";
                 return (
-                  <Marker
-                    key={`x-${e.id}`}
-                    position={[(a.lat + b.lat) / 2, (a.lng + b.lng) / 2]}
-                    icon={closedIcon}
-                    title={`${e.name} (${t.map.closedSuffix})`}
-                    keyboard={false}
+                  <Polyline
+                    key={`${e.id}-${closed}`}
+                    positions={[
+                      [a.lat, a.lng],
+                      [b.lat, b.lng],
+                    ]}
+                    pathOptions={{
+                      color: closed ? "#ef4444" : "#64748b",
+                      weight: closed ? 5 : 3,
+                      opacity: closed ? 0.95 : 0.55,
+                      dashArray: closed ? "8 8" : undefined,
+                      lineCap: "round",
+                    }}
                   />
                 );
               })}
 
-          {routeLine && (
-            <>
-              <Polyline
-                positions={routeLine}
-                pathOptions={{
-                  color: "#2563eb",
-                  weight: 7,
-                  opacity: 0.9,
-                  lineCap: "round",
-                  lineJoin: "round",
-                }}
-              />
-              <Polyline
-                positions={routeLine}
-                pathOptions={{
-                  color: "#ffffff",
-                  weight: 2,
-                  dashArray: "2 12",
-                  lineCap: "round",
-                  className: "map-flow",
-                }}
-              />
-            </>
-          )}
-
-          {layers.shelters &&
-            data.shelters.map((s) => (
-              <Marker
-                key={s.id}
-                position={[s.lat, s.lng]}
-                icon={shelterIcon(s, {
-                  highlighted: s.id === highlightShelterId,
-                  flash: flashing.has(s.id),
-                  clickable: !!onShelterClick,
+            {layers.roads &&
+              data.edges
+                .filter((e) => e.status === "closed")
+                .map((e) => {
+                  const a = nodeById.get(e.fromNodeId);
+                  const b = nodeById.get(e.toNodeId);
+                  if (!a || !b) return null;
+                  return (
+                    <Marker
+                      key={`x-${e.id}`}
+                      position={[(a.lat + b.lat) / 2, (a.lng + b.lng) / 2]}
+                      icon={closedIcon}
+                      title={`${e.name} (${t.map.closedSuffix})`}
+                      keyboard={false}
+                    />
+                  );
                 })}
-                title={`${s.name}: ${s.occupancyPct}%`}
-                zIndexOffset={s.id === highlightShelterId ? 500 : 0}
-                eventHandlers={{ click: () => onShelterClick?.(s.id) }}
-              />
-            ))}
 
-          {layers.sos &&
-            sos?.map((s) => (
+            {routeLine && (
+              <>
+                <Polyline
+                  positions={routeLine}
+                  pathOptions={{
+                    color: "#2563eb",
+                    weight: 7,
+                    opacity: 0.9,
+                    lineCap: "round",
+                    lineJoin: "round",
+                  }}
+                />
+                <Polyline
+                  positions={routeLine}
+                  pathOptions={{
+                    color: "#ffffff",
+                    weight: 2,
+                    dashArray: "2 12",
+                    lineCap: "round",
+                    className: "map-flow",
+                  }}
+                />
+              </>
+            )}
+
+            {layers.shelters &&
+              data.shelters.map((s) => (
+                <Marker
+                  key={s.id}
+                  position={[s.lat, s.lng]}
+                  icon={shelterIcon(s, {
+                    highlighted: s.id === highlightShelterId,
+                    flash: flashing.has(s.id),
+                    clickable: !!onShelterClick,
+                  })}
+                  title={`${s.name}: ${s.occupancyPct}%`}
+                  zIndexOffset={s.id === highlightShelterId ? 500 : 0}
+                  eventHandlers={{ click: () => onShelterClick?.(s.id) }}
+                />
+              ))}
+
+            {layers.sos &&
+              sos?.map((s) => (
+                <Marker
+                  key={s.id}
+                  position={[s.lat, s.lng]}
+                  icon={sosIcon(s, s.id === highlightSosId)}
+                  zIndexOffset={s.priority ? 800 : 600}
+                />
+              ))}
+
+            {origin && (
               <Marker
-                key={s.id}
-                position={[s.lat, s.lng]}
-                icon={sosIcon(s, s.id === highlightSosId)}
-                zIndexOffset={s.priority ? 800 : 600}
+                position={[origin.lat, origin.lng]}
+                icon={youIcon}
+                zIndexOffset={1000}
+                interactive={false}
               />
-            ))}
-
-          {origin && (
-            <Marker
-              position={[origin.lat, origin.lng]}
-              icon={youIcon}
-              zIndexOffset={1000}
-              interactive={false}
-            />
-          )}
-        </MapContainer>
+            )}
+          </MapContainer>
+        )}
 
         <StatusBadge
           updatedAt={updatedAt === undefined ? undefined : updatedAt}

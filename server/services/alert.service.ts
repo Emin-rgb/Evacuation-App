@@ -47,12 +47,13 @@ export async function runDetectionCoalesced() {
 export type ApproveResult = {
   id: string;
   status: "approved";
+  approvedBy: string;
   team: { id: string; name: string } | null;
   shelter: { id: string; name: string } | null;
   assignedSos: number;
 };
 
-export async function approveAlert(id: string): Promise<ApproveResult | "not_found" | "not_open"> {
+export async function approveAlert(id: string, user: { id: string; name: string }): Promise<ApproveResult | "not_found" | "not_open"> {
   const [alert] = await db.select().from(alerts).where(eq(alerts.id, id));
   if (!alert) return "not_found";
   if (alert.status !== "open") return "not_open";
@@ -72,7 +73,7 @@ export async function approveAlert(id: string): Promise<ApproveResult | "not_fou
 
   // db.batch is a single atomic transaction on neon-http.
   const ops = [
-    db.update(alerts).set({ status: "approved" }).where(eq(alerts.id, id)),
+    db.update(alerts).set({ status: "approved", handledBy: user.id, handledAt: new Date() }).where(eq(alerts.id, id)),
     ...(team ? [db.update(rescueTeams).set({ status: "en_route", alertId: id }).where(eq(rescueTeams.id, team.id))] : []),
     ...(shelter ? [db.update(shelters).set({ isActive: true }).where(eq(shelters.id, shelter.id))] : []),
     ...(newSos.length > 0
@@ -89,16 +90,17 @@ export async function approveAlert(id: string): Promise<ApproveResult | "not_fou
   return {
     id,
     status: "approved",
+    approvedBy: user.name,
     team: team ? { id: team.id, name: team.name } : null,
     shelter: shelter ? { id: shelter.id, name: shelter.name } : null,
     assignedSos: newSos.length,
   };
 }
 
-export async function dismissAlert(id: string): Promise<{ id: string; status: "dismissed" } | "not_found" | "not_open"> {
+export async function dismissAlert(id: string, user: { id: string }): Promise<{ id: string; status: "dismissed" } | "not_found" | "not_open"> {
   const [alert] = await db.select().from(alerts).where(eq(alerts.id, id));
   if (!alert) return "not_found";
   if (alert.status !== "open") return "not_open";
-  await db.update(alerts).set({ status: "dismissed" }).where(eq(alerts.id, id));
+  await db.update(alerts).set({ status: "dismissed", handledBy: user.id, handledAt: new Date() }).where(eq(alerts.id, id));
   return { id, status: "dismissed" };
 }

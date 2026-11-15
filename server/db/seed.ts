@@ -100,6 +100,24 @@ async function main() {
   await db.delete(s.roadNodes);
   await db.delete(s.zones);
 
+  // Demo accounts (upserted, never wiped: reseeding must not log people out or lose accounts).
+  const { hashPassword } = await import("../engine/password");
+  const demoUsers = [
+    { email: "nigar@dac.az", name: "Nigar Huseynova", role: "dispatcher" as const, password: "dispatcher123" },
+    { email: "rauf@dac.az", name: "Rauf Aliyev", role: "dispatcher" as const, password: "dispatcher123" },
+    { email: "supervisor@dac.az", name: "Leyla Supervisor", role: "supervisor" as const, password: "supervisor123" },
+  ];
+  for (const u of demoUsers) {
+    const passwordHash = await hashPassword(u.password);
+    await db
+      .insert(s.users)
+      .values({ email: u.email, name: u.name, role: u.role, passwordHash })
+      .onConflictDoUpdate({
+        target: s.users.email,
+        set: { name: u.name, role: u.role, passwordHash, failedAttempts: 0, lockedUntil: null },
+      });
+  }
+
   const zoneRows = await db
     .insert(s.zones)
     .values(Object.entries(ZONES).map(([name, [centerLat, centerLng]]) => ({ name, centerLat, centerLng })))

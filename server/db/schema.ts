@@ -19,7 +19,19 @@ export const sosTypeEnum = pgEnum("sos_type", ["fire", "collapse", "flood", "med
 export const sosStatusEnum = pgEnum("sos_status", ["new", "assigned", "resolved"]);
 export const teamStatusEnum = pgEnum("team_status", ["available", "en_route", "on_scene"]);
 export const alertKindEnum = pgEnum("alert_kind", ["sos_cluster", "shelter_overload"]);
+export const userRoleEnum = pgEnum("user_role", ["dispatcher", "supervisor"]);
 export const alertStatusEnum = pgEnum("alert_status", ["open", "approved", "dismissed"]);
+
+export const users = pgTable("users", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  email: text("email").notNull().unique(),
+  name: text("name").notNull(),
+  role: userRoleEnum("role").notNull(),
+  passwordHash: text("password_hash").notNull(),
+  failedAttempts: integer("failed_attempts").notNull().default(0),
+  lockedUntil: timestamp("locked_until"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
 
 export const zones = pgTable("zones", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -98,6 +110,8 @@ export const alerts = pgTable("alerts", {
   sosCount: integer("sos_count").notNull().default(0),
   message: text("message").notNull(),
   status: alertStatusEnum("status").notNull().default("open"),
+  handledBy: uuid("handled_by").references(() => users.id, { onDelete: "set null" }),
+  handledAt: timestamp("handled_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

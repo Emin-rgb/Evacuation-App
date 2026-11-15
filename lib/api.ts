@@ -4,6 +4,7 @@ export class ApiError extends Error {
   constructor(
     message: string,
     public status: number,
+    public retryAfterSec?: number,
   ) {
     super(message);
   }
@@ -11,7 +12,7 @@ export class ApiError extends Error {
 
 async function fail(res: Response): Promise<never> {
   const body = await res.json().catch(() => null);
-  throw new ApiError(body?.error ?? `Request failed (${res.status})`, res.status);
+  throw new ApiError(body?.error ?? `Request failed (${res.status})`, res.status, body?.retryAfterSec);
 }
 
 async function get<T>(url: string): Promise<T> {
@@ -40,12 +41,13 @@ async function patch<T>(url: string, body: unknown): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-export type SessionRole = "viewer" | "dispatcher";
+export type SessionRole = "supervisor" | "dispatcher";
+export type SessionUser = { id: string; name: string; role: SessionRole };
 
 export const api = {
-  login: (pin: string) => post<{ role: SessionRole }>("/api/auth/login", { pin }),
+  login: (email: string, password: string) => post<{ user: SessionUser }>("/api/auth/login", { email, password }),
   logout: () => post<{ ok: true }>("/api/auth/logout", {}),
-  getSession: () => get<{ role: SessionRole | null }>("/api/auth/me"),
+  getSession: () => get<{ user: SessionUser | null }>("/api/auth/me"),
   getMap: () => get<MapData>("/api/map"),
   getZones: () => get<Zone[]>("/api/zones"),
   getNearestShelters: (lat: number, lng: number) =>
@@ -71,6 +73,7 @@ export const api = {
   approveAlert: (id: string) =>
     post<{
       id: string;
+      approvedBy: string;
       team: { id: string; name: string } | null;
       shelter: { id: string; name: string } | null;
       assignedSos: number;

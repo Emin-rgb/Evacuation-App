@@ -1,35 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { UserGroup03Icon, HeadsetIcon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useT } from "@/lib/i18n/provider";
 
 export default function Home() {
   const t = useT();
-  const cards = [
-    {
-      href: "/citizen",
-      icon: UserGroup03Icon,
-      title: t.landing.citizenTitle,
-      desc: t.landing.citizenDesc,
-      who: t.landing.whoCitizen,
-      bullets: t.landing.citizenBullets,
-      cta: t.landing.citizenCta,
-    },
-    {
-      href: "/dispatcher",
-      icon: HeadsetIcon,
-      title: t.landing.dispatcherTitle,
-      desc: t.landing.dispatcherDesc,
-      who: t.landing.whoDispatcher,
-      bullets: t.landing.dispatcherBullets,
-      cta: t.landing.dispatcherCta,
-    },
-  ];
-
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8">
       <div className="flex flex-col gap-2">
@@ -59,34 +35,10 @@ export default function Home() {
         </ol>
       </section>
 
-      <div className="grid gap-6 sm:grid-cols-2">
-        {cards.map((c) => (
-          <Link key={c.href} href={c.href} className="group">
-            <Card className="group-hover:bg-accent h-full rounded-xl transition-colors">
-              <CardHeader>
-                <HugeiconsIcon icon={c.icon} className="text-primary mb-2 size-8" aria-hidden="true" />
-                <CardTitle className="text-xl">{c.title}</CardTitle>
-                <CardDescription>{c.desc}</CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-2 text-sm">
-                <p className="font-medium">{c.who}</p>
-                <ul className="text-muted-foreground list-disc pl-5">
-                  {c.bullets.map((b) => (
-                    <li key={b}>{b}</li>
-                  ))}
-                </ul>
-                <span className="text-primary mt-1 font-medium">{c.cta} →</span>
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
-      </div>
-
       <div className="flex flex-col items-start gap-3">
         <Button size="lg" asChild>
           <Link href="/citizen">{t.landing.startDemo}</Link>
         </Button>
-        <p className="text-muted-foreground text-sm">{t.landing.tip}</p>
         <p className="text-muted-foreground text-xs">{t.landing.simulated}</p>
       </div>
     </main>

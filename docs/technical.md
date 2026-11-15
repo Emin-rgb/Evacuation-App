@@ -259,16 +259,16 @@ The app is a demo MVP with an intentionally small attack surface, but we applied
 | Safe state changes | Approve/dismiss only act on alerts in `open` state (`409` otherwise), preventing double-dispatch; occupancy is clamped to capacity; the burst endpoint is capped at 20.                                                                                                |
 | Integrity          | Foreign keys, enums and `NOT NULL` constraints in the database back up the application checks. Approval is one atomic transaction.                                                                                                                                     |
 | Flood protection (Drop 3) | `POST /api/sos`: per-IP (20/min) and per-citizen (3/min) rate limit before any DB work, Baku coordinate bounds, duplicate filter (unresolved SOS < 5 min), distinct-citizen Red Alert rule, coalesced detection after the response, capped dashboard feed. |
-| Access control (Drop 3) | PIN login → HS256 JWT (`node:crypto`) in an httpOnly SameSite=Lax cookie; `viewer` / `dispatcher` roles; approve, dismiss, simulator and road/shelter writes need `dispatcher`; login limited to 5 attempts/min/IP; PIN compared in constant time; production fails closed (503) if secrets are unset. |
+| Access control (Drop 3) | Named user accounts; passwords hashed with `scrypt` (random salt, constant-time compare); email + password login issues an HS256 JWT (`node:crypto`) in an httpOnly SameSite=Lax cookie; `supervisor` / `dispatcher` roles; approve, dismiss, simulator and road/shelter writes need `dispatcher`; same error and timing for unknown email and wrong password; account locked 5 min after 5 failures; login rate-limited per IP and per email; production fails closed (503) if `JWT_SECRET` is unset. |
 | Dependencies       | Minimal dependency set; versions pinned by `package-lock.json`. No new packages were added beyond the approved stack.                                                                                                                                                  |
 
 **Known gaps (accepted for the demo, planned for production)**
 
-- **Dispatcher auth is PIN-based (Drop 3), not user accounts.** Two shared PINs map to two roles. Production needs named accounts, hashed credentials and an audit trail.
+- **Account management is minimal:** accounts are seeded, with no self-service signup, password reset, MFA or session revocation (a deleted user's token stays valid until it expires, 8 h). Production would add these, plus an admin screen.
 - **Rate limiter is per serverless instance** (in memory). A distributed attacker can exceed the nominal limit across instances; the duplicate filter, Baku bounds and distinct-citizen detector still apply. Production: shared store (Upstash/Redis) or edge rate limiting.
 - **Citizen identity is self-asserted.** The UUID in `localStorage` is not proof of identity; it only needs to prove "distinct person" for the cluster rule. Production would need device attestation or phone verification to resist fake distinct citizens.
 - **CSRF:** the session cookie is `SameSite=Lax` and all state changes are JSON `POST`/`PATCH`, so cross-site forms cannot send it; add a CSRF token if cookies are ever relaxed.
-- **No audit log** of dispatcher approvals.
+- **Audit trail is partial:** approve/dismiss record who and when (`alerts.handled_by`, `handled_at`); there is no general event log (logins, simulator use, road/shelter changes).
 
 ---
 
@@ -333,7 +333,7 @@ The app is a demo MVP with an intentionally small attack surface, but we applied
 | Synchronous detection after writes | Cron / queue / DB triggers     | Alert exists when the write returns; no background infrastructure to explain or fail                      |
 | Pure `server/engine/`              | Logic inside route handlers    | Testable, explainable on one slide, reusable if the transport changes                                     |
 | `TrafficProvider` interface        | Query edges directly           | Models the case's "external routing API" and gives an outage-fallback seam                                |
-| Anonymous citizens, no auth        | Login / OTP                    | Case does not require it; reduces friction in an emergency; dispatcher PIN reserved for the security drop |
+| Anonymous citizens, no auth        | Login / OTP                    | Case does not require it; reduces friction in an emergency; dispatcher accounts added in the security drop |
 | Distinct citizens for clusters     | Count raw signals              | Resists one person spamming SOS                                                                           |
 | Server returns codes, not text     | Server-side translated strings | Language-independent backend; UI owns presentation                                                        |
 | Native enums + FKs                 | Free-text status columns       | Database enforces valid states; judges can read the model                                                 |
@@ -353,7 +353,7 @@ The app is a demo MVP with an intentionally small attack surface, but we applied
 - Shelter occupancy is set by the simulator, not measured. A real deployment needs check-in counts or sensors.
 - Detection and approval are not guarded against two concurrent writers (see the partial unique index suggestion above).
 - Team assignment is "available team in the zone, else any"; it does not optimise by distance or by SOS type.
-- PIN-based roles only, per-instance rate limiting, no audit trail (section 8).
+- Seeded accounts only, per-instance rate limiting, partial audit trail (section 8).
 - Only the engine is unit-tested; there are no automated integration or UI tests.
 
 ---
@@ -362,7 +362,7 @@ The app is a demo MVP with an intentionally small attack surface, but we applied
 
 **Short term (days)**
 
-- Dispatcher PIN/login enforced in `proxy.ts`; protect or remove simulator endpoints in production.
+- Dispatcher login is implemented (accounts + roles); for production also remove or isolate the simulator endpoints.
 - Rate limiting on `POST /api/sos`; restrict the detector query to the 5-minute window.
 - `TrafficProvider` fallback chain with a visible "degraded mode" badge during an API outage.
 - Partial unique index to make alert de-duplication race-free.
