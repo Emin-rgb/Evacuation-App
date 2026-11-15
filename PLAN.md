@@ -122,10 +122,10 @@ Each task ends with a **✅ Browser check**. Do them in order; tick them off whe
   - [x] 11.4 Red Alert cards at the top of `/dispatcher` (pulsing red, zone, SOS count, time)
   - ✅ Citizen SOS + burst → Red Alert appears; shelter to 96% → overload alert appears
 
-- [ ] **12. One-click approval**
-  - [ ] 12.1 `POST /api/alerts/:id/approve`: nearest available team → `en_route`; reserve shelter in the zone → `isActive`; the cluster's SOS → `assigned`; alert → `approved` (in one transaction)
-  - [ ] 12.2 `POST /api/alerts/:id/dismiss`
-  - [ ] 12.3 Approve / Dismiss buttons with loading state + toast showing what happened
+- [x] **12. One-click approval**
+  - [x] 12.1 `POST /api/alerts/:id/approve`: nearest available team → `en_route`; reserve shelter in the zone → `isActive`; the cluster's SOS → `assigned`; alert → `approved` (in one transaction)
+  - [x] 12.2 `POST /api/alerts/:id/dismiss`
+  - [x] 12.3 Approve / Dismiss buttons with loading state + toast showing what happened
   - ✅ Approve → team badge `en_route`, the new shelter appears on the citizen map and becomes route-able
 
 - [ ] **13. Engine unit tests** (15% of the score; `node:test` through `tsx`, no new deps)

@@ -53,5 +53,13 @@ export const api = {
     post<{ id: string }>("/api/sos", { citizenId, type, lat, lng }),
   sosBurst: (lat: number, lng: number, count: number) =>
     post<{ created: number; alertsCreated: number }>("/api/simulate/sos-burst", { lat, lng, count }),
+  approveAlert: (id: string) =>
+    post<{
+      id: string;
+      team: { id: string; name: string } | null;
+      shelter: { id: string; name: string } | null;
+      assignedSos: number;
+    }>(`/api/alerts/${id}/approve`, {}),
+  dismissAlert: (id: string) => post<{ id: string }>(`/api/alerts/${id}/dismiss`, {}),
   getTraffic: () => get<TrafficEdge[]>("/api/traffic"),
 };

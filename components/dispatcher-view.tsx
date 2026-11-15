@@ -1,13 +1,21 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { CityMap } from "@/components/city-map";
 import { SimulatorPanel } from "@/components/simulator-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { api } from "@/lib/api";
 import { t } from "@/lib/i18n";
@@ -33,10 +41,15 @@ const TEAM_BADGE: Record<TeamStatus, string> = {
 };
 
 function Empty({ children }: { children: string }) {
-  return <p className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">{children}</p>;
+  return (
+    <p className="text-muted-foreground rounded-xl border border-dashed p-6 text-center text-sm">
+      {children}
+    </p>
+  );
 }
 
 export function DispatcherView() {
+  const [busyId, setBusyId] = useState<string | null>(null);
   const [data, setData] = useState<DashboardData | null>(null);
   const [map, setMap] = useState<MapData | null>(null);
   const [error, setError] = useState(false);
@@ -57,8 +70,36 @@ export function DispatcherView() {
     return () => clearInterval(id);
   }, [load]);
 
+  async function handleAlert(id: string, action: "approve" | "dismiss") {
+    setBusyId(id);
+    try {
+      if (action === "approve") {
+        const r = await api.approveAlert(id);
+        toast.success(t.dispatcher.approveToast, {
+          description: [
+            r.team ? `${t.dispatcher.toastTeam}: ${r.team.name}` : t.dispatcher.toastNoTeam,
+            r.shelter
+              ? `${t.dispatcher.toastShelter}: ${r.shelter.name}`
+              : t.dispatcher.toastNoShelter,
+          ].join(" · "),
+        });
+      } else {
+        await api.dismissAlert(id);
+        toast.success(t.dispatcher.dismissToast);
+      }
+      load();
+    } catch {
+      toast.error(t.dispatcher.actionError);
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   const sosPoints = useMemo(
-    () => data?.sos.filter((s) => s.status !== "resolved").map(({ id, lat, lng, type }) => ({ id, lat, lng, type })),
+    () =>
+      data?.sos
+        .filter((s) => s.status !== "resolved")
+        .map(({ id, lat, lng, type }) => ({ id, lat, lng, type })),
     [data],
   );
 
@@ -106,7 +147,10 @@ export function DispatcherView() {
   return (
     <div className="flex flex-col gap-6">
       {error && (
-        <p role="alert" className="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">
+        <p
+          role="alert"
+          className="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400"
+        >
           {t.dispatcher.error}
         </p>
       )}
@@ -118,7 +162,7 @@ export function DispatcherView() {
           <Card key={k.label}>
             <CardContent className="flex flex-col gap-1">
               <span className={cn("text-3xl font-semibold", k.tone)}>{k.value}</span>
-              <span className="text-sm text-muted-foreground">{k.label}</span>
+              <span className="text-muted-foreground text-sm">{k.label}</span>
             </CardContent>
           </Card>
         ))}
@@ -133,23 +177,40 @@ export function DispatcherView() {
             <div
               key={a.id}
               role="alert"
-              className="flex animate-pulse items-center justify-between gap-4 rounded-xl border border-red-500 bg-red-500/15 p-4"
+              className="flex flex-col gap-3 rounded-xl border border-red-500 bg-red-500/15 p-4"
             >
-              <div>
-                <p className="font-semibold text-red-700 dark:text-red-400">
-                  {a.kind === "sos_cluster" ? t.dispatcher.alertCluster : t.dispatcher.alertOverload} · {a.zoneName}
-                </p>
-                <p className="text-sm text-muted-foreground">{a.message}</p>
-              </div>
-              <div className="text-right text-sm text-muted-foreground">
-                {a.kind === "sos_cluster" && (
-                  <p>
-                    {t.dispatcher.sosCount}: {a.sosCount}
+              <div className="flex animate-pulse items-center justify-between gap-4">
+                <div>
+                  <p className="font-semibold text-red-700 dark:text-red-400">
+                    {a.kind === "sos_cluster"
+                      ? t.dispatcher.alertCluster
+                      : t.dispatcher.alertOverload}{" "}
+                    · {a.zoneName}
                   </p>
-                )}
-                <p>
-                  {minutesAgo(a.createdAt)} {t.dispatcher.min} {t.dispatcher.ago}
-                </p>
+                  <p className="text-muted-foreground text-sm">{a.message}</p>
+                </div>
+                <div className="text-muted-foreground text-right text-sm">
+                  {a.kind === "sos_cluster" && (
+                    <p>
+                      {t.dispatcher.sosCount}: {a.sosCount}
+                    </p>
+                  )}
+                  <p>
+                    {minutesAgo(a.createdAt)} {t.dispatcher.min} {t.dispatcher.ago}
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button disabled={busyId === a.id} onClick={() => handleAlert(a.id, "approve")}>
+                  {busyId === a.id ? "…" : t.dispatcher.approve}
+                </Button>
+                <Button
+                  variant="outline"
+                  disabled={busyId === a.id}
+                  onClick={() => handleAlert(a.id, "dismiss")}
+                >
+                  {t.dispatcher.dismiss}
+                </Button>
               </div>
             </div>
           ))
@@ -161,7 +222,7 @@ export function DispatcherView() {
           <h2 className="text-lg font-semibold">{t.dispatcher.mapTitle}</h2>
           <CityMap data={map} sos={sosPoints} />
           {data.closedEdges.length > 0 && (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               {t.dispatcher.closedRoads}: {data.closedEdges.map((e) => e.name).join(", ")}
             </p>
           )}
@@ -197,7 +258,7 @@ export function DispatcherView() {
                           {t.dispatcher.sosStatus[s.status]}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right text-muted-foreground">
+                      <TableCell className="text-muted-foreground text-right">
                         {minutesAgo(s.createdAt)} {t.dispatcher.min}
                       </TableCell>
                     </TableRow>
@@ -226,13 +287,15 @@ export function DispatcherView() {
                       <TableCell>{s.zoneName}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
+                          <div className="bg-muted h-2 flex-1 overflow-hidden rounded-full">
                             <div
                               className={cn("h-full", pctColor(s.occupancyPct))}
                               style={{ width: `${Math.min(100, s.occupancyPct)}%` }}
                             />
                           </div>
-                          <span className="w-10 text-right text-sm tabular-nums">{s.occupancyPct}%</span>
+                          <span className="w-10 text-right text-sm tabular-nums">
+                            {s.occupancyPct}%
+                          </span>
                         </div>
                       </TableCell>
                     </TableRow>
