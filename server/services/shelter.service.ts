@@ -13,6 +13,7 @@ export async function findNearestShelters(origin: LatLng): Promise<NearestShelte
       type: s.type,
       lat: s.lat,
       lng: s.lng,
+      isAccessible: s.isAccessible,
       capacity: s.capacity,
       occupancy: s.occupancy,
       occupancyPct: Math.round((s.occupancy / s.capacity) * 100),

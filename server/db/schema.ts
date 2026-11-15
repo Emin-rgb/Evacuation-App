@@ -14,6 +14,7 @@ import { relations } from "drizzle-orm";
 export const roadStatusEnum = pgEnum("road_status", ["open", "closed"]);
 export const shelterTypeEnum = pgEnum("shelter_type", ["shelter", "park", "stadium"]);
 export const citizenStatusEnum = pgEnum("citizen_status", ["unknown", "safe", "sos"]);
+export const citizenRoleEnum = pgEnum("citizen_role", ["standard", "priority"]);
 export const sosTypeEnum = pgEnum("sos_type", ["fire", "collapse", "flood", "medical"]);
 export const sosStatusEnum = pgEnum("sos_status", ["new", "assigned", "resolved"]);
 export const teamStatusEnum = pgEnum("team_status", ["available", "en_route", "on_scene"]);
@@ -41,6 +42,7 @@ export const roadEdges = pgTable("road_edges", {
   name: text("name").notNull(),
   lengthM: integer("length_m").notNull(),
   status: roadStatusEnum("status").notNull().default("open"),
+  isAccessible: boolean("is_accessible").notNull().default(true),
 });
 
 export const shelters = pgTable("shelters", {
@@ -55,6 +57,7 @@ export const shelters = pgTable("shelters", {
   occupancy: integer("occupancy").notNull().default(0),
   isActive: boolean("is_active").notNull().default(true),
   isReserve: boolean("is_reserve").notNull().default(false),
+  isAccessible: boolean("is_accessible").notNull().default(true),
 });
 
 export const citizens = pgTable("citizens", {
@@ -63,6 +66,7 @@ export const citizens = pgTable("citizens", {
   lat: doublePrecision("lat"),
   lng: doublePrecision("lng"),
   status: citizenStatusEnum("status").notNull().default("unknown"),
+  role: citizenRoleEnum("role").notNull().default("standard"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -76,6 +80,7 @@ export const sosSignals = pgTable(
     lat: doublePrecision("lat").notNull(),
     lng: doublePrecision("lng").notNull(),
     status: sosStatusEnum("status").notNull().default("new"),
+    priority: integer("priority").notNull().default(0),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (t) => [index("sos_created_at_idx").on(t.createdAt), index("sos_zone_idx").on(t.zoneId)],

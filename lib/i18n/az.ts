@@ -1,4 +1,4 @@
-export const t = {
+export const az = {
   app: {
     name: "Təhlükəsizlik Mərkəzi",
     description: "Böhran zamanı təxliyə və dispetçer sistemi",
@@ -57,11 +57,20 @@ export const t = {
     safeFailed: "Status yenilənmədi.",
     safeDone: "Təhlükəsizsiniz ✓",
     cancel: "Ləğv et",
+    roleToggle: "Xüsusi qayğıya ehtiyacım var",
+    roleHint: "Marşrut yalnız əlçatan yollar və məntəqələr üzrə qurulacaq.",
+    accessibleRoute: "Əlçatan marşrut",
+    notAccessible: "Əlçatan deyil",
+    sosPriority: "Kritik Prioritet #1: siqnalınız ön sıraya alındı.",
+    roleFailed: "Rol yenilənmədi.",
   },
+  lang: { label: "Dil", az: "AZ", en: "EN" },
   map: {
     error: "Xəritə yüklənmədi.",
     retry: "Yenidən cəhd et",
     empty: "Xəritə məlumatı yoxdur.",
+    ariaLabel: "Bakı yol sxemi",
+    closedSuffix: "bağlıdır",
   },
   dispatcher: {
     title: "Dispetçer paneli",
@@ -70,6 +79,8 @@ export const t = {
     kpiSafe: "Təhlükəsiz vətəndaşlar",
     kpiCritical: "Kritik məntəqələr",
     kpiTeams: "Boş briqadalar",
+    kpiPriority: "Kritik Prioritet #1",
+    priorityBadge: "Priority#1",
     alerts: "Qırmızı Həyəcan",
     tabSos: "SOS siqnalları",
     tabShelters: "Məntəqələr",
@@ -126,4 +137,7 @@ export const t = {
     burstTitle: "SOS partlayışı",
     error: "Əməliyyat alınmadı.",
   },
-} as const;
+};
+
+/** Every language dictionary must have exactly these keys (a missing key is a compile error). */
+export type Dictionary = typeof az;

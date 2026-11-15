@@ -10,12 +10,13 @@ export interface TrafficProvider {
 export class SimulatedTrafficProvider implements TrafficProvider {
   async getEdges(): Promise<GraphEdge[]> {
     const rows = await db.select().from(roadEdges);
-    return rows.map(({ id, fromNodeId, toNodeId, lengthM, status }) => ({
+    return rows.map(({ id, fromNodeId, toNodeId, lengthM, status, isAccessible }) => ({
       id,
       fromNodeId,
       toNodeId,
       lengthM,
       status,
+      isAccessible,
     }));
   }
 }

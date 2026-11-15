@@ -79,3 +79,24 @@ test("pickShelter skips unreachable shelters", () => {
 test("pickShelter returns null for no candidates", () => {
   assert.equal(pickShelter([], new Map(), (_s, d) => d), null);
 });
+
+test("accessibleOnly skips inaccessible edges; default behaviour is unchanged", () => {
+  const edges: GraphEdge[] = [
+    { ...edge("1", "A", "B", 100), isAccessible: false },
+    edge("2", "B", "C", 100),
+    edge("3", "A", "C", 500),
+  ];
+  assert.deepEqual(buildPath(shortestPaths(edges, "A").prev, "A", "C"), ["A", "B", "C"]);
+  assert.deepEqual(buildPath(shortestPaths(edges, "A", { accessibleOnly: true }).prev, "A", "C"), ["A", "C"]);
+});
+
+test("accessibleOnly route never picks an inaccessible shelter", () => {
+  const dist = new Map([["N1", 100], ["N2", 400]]);
+  const shelters = [
+    { id: "near", nodeId: "N1", capacity: 100, occupancy: 10, isAccessible: false },
+    { id: "far", nodeId: "N2", capacity: 100, occupancy: 10, isAccessible: true },
+  ];
+  const cost = (_s: unknown, d: number) => d;
+  assert.equal(pickShelter(shelters, dist, cost)?.shelter.id, "near");
+  assert.equal(pickShelter(shelters, dist, cost, { accessibleOnly: true })?.shelter.id, "far");
+});

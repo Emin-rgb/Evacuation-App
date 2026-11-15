@@ -24,7 +24,7 @@ export async function getDashboard(): Promise<DashboardData> {
       .from(sosSignals)
       .innerJoin(zones, eq(sosSignals.zoneId, zones.id))
       .where(gte(sosSignals.createdAt, since))
-      .orderBy(desc(sosSignals.createdAt)),
+      .orderBy(desc(sosSignals.priority), desc(sosSignals.createdAt)),
     db
       .select({ a: alerts, zoneName: zones.name })
       .from(alerts)
@@ -42,6 +42,7 @@ export async function getDashboard(): Promise<DashboardData> {
       type: s.type,
       lat: s.lat,
       lng: s.lng,
+      isAccessible: s.isAccessible,
       capacity: s.capacity,
       occupancy: s.occupancy,
       occupancyPct: Math.round((s.occupancy / s.capacity) * 100),
@@ -52,6 +53,7 @@ export async function getDashboard(): Promise<DashboardData> {
   return {
     stats: {
       activeSos: sosRows.filter(({ s }) => s.status !== "resolved").length,
+      prioritySos: sosRows.filter(({ s }) => s.status !== "resolved" && s.priority > 0).length,
       safeCitizens: safe.length,
       criticalShelters: shelterList.filter((s) => s.occupancyPct >= CRITICAL_PCT).length,
       availableTeams: teamRows.filter(({ t }) => t.status === "available").length,
@@ -62,6 +64,7 @@ export async function getDashboard(): Promise<DashboardData> {
       id: s.id,
       type: s.type,
       status: s.status,
+      priority: s.priority,
       zoneName,
       lat: s.lat,
       lng: s.lng,

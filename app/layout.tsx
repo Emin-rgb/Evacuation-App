@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
-import { t } from "@/lib/i18n";
+import { az } from "@/lib/i18n/az";
+import { LanguageProvider } from "@/lib/i18n/provider";
 import { Toaster } from "@/components/ui/sonner";
 import { SiteHeader } from "@/components/site-header";
 
@@ -19,16 +20,19 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: t.app.name,
-  description: t.app.description,
+  title: az.app.name,
+  description: az.app.description,
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="az" className={cn("h-full", "antialiased", geistSans.variable, geistMono.variable, "font-sans", inter.variable)}>
-      <body className="flex min-h-full flex-col"><SiteHeader />
-        {children}
-        <Toaster />
+      <body className="flex min-h-full flex-col">
+        <LanguageProvider>
+          <SiteHeader />
+          {children}
+          <Toaster />
+        </LanguageProvider>
       </body>
     </html>
   );

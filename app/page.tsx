@@ -1,10 +1,14 @@
+"use client";
+
 import Link from "next/link";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { UserGroup03Icon, HeadsetIcon } from "@hugeicons/core-free-icons";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { t } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/provider";
 
-const cards = [
+export default function Home() {
+  const t = useT();
+  const cards = [
   {
     href: "/citizen",
     icon: UserGroup03Icon,
@@ -19,9 +23,8 @@ const cards = [
     desc: t.landing.dispatcherDesc,
     cta: t.landing.dispatcherCta,
   },
-];
+  ];
 
-export default function Home() {
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-8">
       <div className="mb-8 flex flex-col gap-2">

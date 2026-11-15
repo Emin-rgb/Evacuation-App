@@ -1,4 +1,4 @@
-import type { SosType, DashboardData, MapData, NearestShelter, RoadStatus, RouteResult, TrafficEdge, Zone } from "@/lib/types";
+import type { CitizenRole, SosType, DashboardData, MapData, NearestShelter, RoadStatus, RouteResult, TrafficEdge, Zone } from "@/lib/types";
 
 async function get<T>(url: string): Promise<T> {
   const res = await fetch(url, { cache: "no-store" });
@@ -40,17 +40,22 @@ export const api = {
   getZones: () => get<Zone[]>("/api/zones"),
   getNearestShelters: (lat: number, lng: number) =>
     get<NearestShelter[]>(`/api/shelters/nearest?lat=${lat}&lng=${lng}`),
-  getRoute: (lat: number, lng: number, prev?: string) =>
-    get<RouteResult>(`/api/route?lat=${lat}&lng=${lng}${prev ? `&prev=${prev}` : ""}`),
+  getRoute: (lat: number, lng: number, prev?: string, citizenId?: string) =>
+    get<RouteResult>(
+      `/api/route?lat=${lat}&lng=${lng}${prev ? `&prev=${prev}` : ""}${citizenId ? `&citizenId=${citizenId}` : ""}`,
+    ),
   getDashboard: () => get<DashboardData>("/api/dashboard"),
   setRoadStatus: (id: string, status: RoadStatus) =>
     patch<{ id: string; name: string; status: RoadStatus }>(`/api/traffic/roads/${id}`, { status }),
   setShelterOccupancy: (id: string, occupancy: number) =>
     patch<{ id: string; name: string; occupancyPct: number }>(`/api/shelters/${id}`, { occupancy }),
-  createCitizen: (lat?: number, lng?: number) => post<{ id: string }>("/api/citizens", { lat, lng }),
+  createCitizen: (lat?: number, lng?: number, role?: CitizenRole) =>
+    post<{ id: string }>("/api/citizens", { lat, lng, role }),
+  setCitizenRole: (id: string, role: CitizenRole) =>
+    patch<{ id: string; role: CitizenRole }>(`/api/citizens/${id}`, { role }),
   markSafe: (id: string) => patch<{ id: string; status: string }>(`/api/citizens/${id}`, { status: "safe" }),
   sendSos: (citizenId: string, type: SosType, lat: number, lng: number) =>
-    post<{ id: string }>("/api/sos", { citizenId, type, lat, lng }),
+    post<{ id: string; priority: number }>("/api/sos", { citizenId, type, lat, lng }),
   sosBurst: (lat: number, lng: number, count: number) =>
     post<{ created: number; alertsCreated: number }>("/api/simulate/sos-burst", { lat, lng, count }),
   approveAlert: (id: string) =>

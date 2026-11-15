@@ -7,10 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { api } from "@/lib/api";
-import { t } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/provider";
 import type { MapData, MapShelter } from "@/lib/types";
 
 function ShelterRow({ shelter, onChanged }: { shelter: MapShelter; onChanged: () => void }) {
+  const t = useT();
   const [custom, setCustom] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -62,6 +63,7 @@ function ShelterRow({ shelter, onChanged }: { shelter: MapShelter; onChanged: ()
 }
 
 export function SimulatorPanel({ map, onChanged }: { map: MapData; onChanged: () => void }) {
+  const t = useT();
   const [busyRoad, setBusyRoad] = useState<string | null>(null);
   const [bursting, setBursting] = useState(false);
 

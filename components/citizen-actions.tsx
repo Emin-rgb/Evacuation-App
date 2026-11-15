@@ -5,54 +5,26 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { api } from "@/lib/api";
-import { t } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/provider";
 import type { SosType } from "@/lib/types";
 
-const STORAGE_KEY = "citizenId";
 const SOS_TYPES: SosType[] = ["fire", "collapse", "flood", "medical"];
 
-function readId(): string | null {
-  try {
-    return localStorage.getItem(STORAGE_KEY);
-  } catch {
-    return null;
-  }
-}
+type Props = {
+  origin: { lat: number; lng: number } | null;
+  withCitizen: <T>(fn: (id: string) => Promise<T>) => Promise<T>;
+};
 
-function writeId(id: string) {
-  try {
-    localStorage.setItem(STORAGE_KEY, id);
-  } catch {
-    /* storage unavailable: id lives for this call only */
-  }
-}
-
-export function CitizenActions({ origin }: { origin: { lat: number; lng: number } | null }) {
+export function CitizenActions({ origin, withCitizen }: Props) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [safe, setSafe] = useState(false);
 
-  async function ensureCitizen() {
-    const existing = readId();
-    if (existing) return existing;
-    const created = await api.createCitizen(origin?.lat, origin?.lng);
-    writeId(created.id);
-    return created.id;
-  }
-
   async function run(fn: (id: string) => Promise<void>, failMsg: string) {
     setBusy(true);
     try {
-      let id = await ensureCitizen();
-      try {
-        await fn(id);
-      } catch {
-        // stale id (e.g. DB reseeded): create a fresh citizen once and retry
-        const created = await api.createCitizen(origin?.lat, origin?.lng);
-        writeId(created.id);
-        id = created.id;
-        await fn(id);
-      }
+      await withCitizen(fn);
     } catch {
       toast.error(failMsg);
     } finally {
@@ -65,8 +37,8 @@ export function CitizenActions({ origin }: { origin: { lat: number; lng: number 
     setOpen(false);
     setSafe(false);
     void run(async (id) => {
-      await api.sendSos(id, type, origin.lat, origin.lng);
-      toast.success(t.citizen.sosSent);
+      const res = await api.sendSos(id, type, origin.lat, origin.lng);
+      toast.success(res.priority > 0 ? t.citizen.sosPriority : t.citizen.sosSent);
     }, t.citizen.sosFailed);
   }
 

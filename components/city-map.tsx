@@ -1,11 +1,12 @@
 "use client";
 
 import { useMemo } from "react";
+import { useT } from "@/lib/i18n/provider";
 import { cn } from "@/lib/utils";
 import type { MapData, SosType } from "@/lib/types";
 
 type LatLng = { lat: number; lng: number };
-export type MapSos = LatLng & { id: string; type: SosType };
+export type MapSos = LatLng & { id: string; type: SosType; priority?: number };
 
 type Props = {
   data: MapData;
@@ -33,6 +34,7 @@ function occupancyFill(pct: number) {
 }
 
 export function CityMap({ data, route, sos, highlightShelterId, className }: Props) {
+  const t = useT();
   const project = useMemo(() => {
     const pts: LatLng[] = [...data.nodes, ...data.shelters];
     const lats = pts.map((p) => p.lat);
@@ -60,7 +62,7 @@ export function CityMap({ data, route, sos, highlightShelterId, className }: Pro
     <svg
       viewBox={`0 0 ${W} ${H}`}
       role="img"
-      aria-label="Bakı yol sxemi"
+      aria-label={t.map.ariaLabel}
       className={cn("w-full rounded-xl border bg-muted/40", className)}
     >
       {data.edges.map((e) => {
@@ -82,7 +84,7 @@ export function CityMap({ data, route, sos, highlightShelterId, className }: Pro
             className={cn(closed ? "stroke-red-500" : "stroke-muted-foreground/40")}
             strokeWidth={closed ? 4 : 3}
           >
-            <title>{closed ? `${e.name} (bağlıdır)` : e.name}</title>
+            <title>{closed ? `${e.name} (${t.map.closedSuffix})` : e.name}</title>
           </line>
         );
       })}
@@ -140,14 +142,12 @@ export function CityMap({ data, route, sos, highlightShelterId, className }: Pro
       {sos?.map((s) => {
         const p = project(s);
         return (
-          <circle
-            key={s.id}
-            cx={p.x}
-            cy={p.y}
-            r={6}
-            className={cn(SOS_FILL[s.type], "stroke-background")}
-            strokeWidth={2}
-          />
+          <g key={s.id}>
+            {s.priority ? (
+              <circle cx={p.x} cy={p.y} r={11} fill="none" className="stroke-red-600" strokeWidth={3} />
+            ) : null}
+            <circle cx={p.x} cy={p.y} r={6} className={cn(SOS_FILL[s.type], "stroke-background")} strokeWidth={2} />
+          </g>
         );
       })}
     </svg>

@@ -1,7 +1,10 @@
+"use client";
+
 import { DispatcherView } from "@/components/dispatcher-view";
-import { t } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/provider";
 
 export default function DispatcherPage() {
+  const t = useT();
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-8">
       <div className="mb-6 flex flex-col gap-1">

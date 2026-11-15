@@ -349,9 +349,17 @@ The challenge announces changes during the event. Each one is recorded here with
 
 | Drop | Status          | Summary                                                                                                                                                                                                                |
 | ---- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1    | not yet applied | Planned: priority SOS role with accessible evacuation routes, and AZ/EN language switch. Designed to be additive (new columns have defaults; the routing filter is off by default so existing behaviour is unchanged). |
+| 1    | implemented     | Priority SOS role with accessible evacuation routes (Priority#1 on the dispatcher), and an AZ/EN language switch. Additive: new columns have defaults and `accessibleOnly` is off unless the citizen is `priority`, so standard routes are unchanged. |
 
-_No drop has been implemented yet; this table will be updated as each one lands._
+### Drop 1: what changed
+
+- **Schema (additive, defaults):** `citizens.role`, `road_edges.isAccessible`, `shelters.isAccessible`, `sos_signals.priority`.
+- **Engine:** `shortestPaths` / `pickShelter` take an optional `{ accessibleOnly }` (tests added in `tests/routing.test.ts`).
+- **API:** `GET /api/route?citizenId=` (priority citizens get accessible-only routes and shelters), `POST /api/citizens` and `PATCH /api/citizens/:id` accept `role`, `POST /api/sos` sets `priority=1` for priority citizens, shelters carry `isAccessible`, dashboard exposes `priority` and `prioritySos`.
+- **UI:** role toggle and "Accessible route" badge (citizen), Priority#1 pinned rows, KPI sub-count and ringed map dots (dispatcher).
+- **i18n:** `lib/i18n/{az,en}.ts` (typed `Dictionary`, a missing key is a compile error), `LanguageProvider` + `useT()`, AZ/EN switch in the header, persisted in localStorage. Place and shelter names from the DB are data and stay as seeded; route reasons are sent as codes.
+- **Seed:** 6 of 31 roads and 2 of 10 shelters flagged non-accessible (graph stays connected), 3 priority citizens.
+- **Crisis rule unchanged:** a priority SOS counts as one normal signal.
 
 ---
 

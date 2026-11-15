@@ -82,6 +82,12 @@ const EDGES: [string, string, string][] = [
   ["n12", "n8", "Tbilisi yolu"],
 ];
 
+// Drop 1: edges without ramps/with stairs (indices into EDGES by "a-b"), graph stays connected for accessible-only routing
+const INACCESSIBLE_EDGES = new Set(["n3-n5", "n5-n7", "n6-n4", "n10-n9", "n8-n11", "n18-n15"]);
+const INACCESSIBLE_SHELTERS = new Set(["Təbriz küçəsi sığınacağı", "Nəsimi İdman Sarayı"]);
+// citizen indexes (of 40) with the priority role; 5 and 9 also have an SOS signal
+const PRIORITY_CITIZENS = new Set([5, 9, 20]);
+
 // [name, type, zone, nodeKey, capacity, occupancy, active, reserve]
 const SHELTERS: [string, "shelter" | "park" | "stadium", string, string, number, number, boolean, boolean][] = [
   ["Yasamal Parkı", "park", "Yasamal", "n2", 3000, 700, true, false],
@@ -151,6 +157,7 @@ async function main() {
       toNodeId: nodeId[b],
       name,
       lengthM: haversineM([NODES[a][1], NODES[a][2]], [NODES[b][1], NODES[b][2]]),
+      isAccessible: !INACCESSIBLE_EDGES.has(`${a}-${b}`),
     })),
   );
 
@@ -166,6 +173,7 @@ async function main() {
       occupancy,
       isActive,
       isReserve,
+      isAccessible: !INACCESSIBLE_SHELTERS.has(name),
     })),
   );
 
@@ -181,6 +189,7 @@ async function main() {
       lat: lat + (((i * 37) % 21) - 10) * 0.0006,
       lng: lng + (((i * 53) % 21) - 10) * 0.0006,
       status: (i % 5 === 0 ? "safe" : "unknown") as "safe" | "unknown",
+      role: (PRIORITY_CITIZENS.has(i) ? "priority" : "standard") as "priority" | "standard",
     };
   });
   const citizenRows = await db.insert(s.citizens).values(citizenValues).returning();
@@ -195,6 +204,7 @@ async function main() {
       lat: c.lat!,
       lng: c.lng!,
       status: (i < 4 ? "resolved" : i < 7 ? "assigned" : "new") as "resolved" | "assigned" | "new",
+      priority: c.role === "priority" ? 1 : 0,
       createdAt: new Date(Date.now() - (20 + i * 3) * 60_000),
     })),
   );

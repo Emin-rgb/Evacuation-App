@@ -1,5 +1,6 @@
 export type RoadStatus = "open" | "closed";
 export type ShelterType = "shelter" | "park" | "stadium";
+export type CitizenRole = "standard" | "priority";
 export type SosType = "fire" | "collapse" | "flood" | "medical";
 
 export type MapNode = { id: string; name: string; lat: number; lng: number };
@@ -19,6 +20,7 @@ export type MapShelter = {
   capacity: number;
   occupancy: number;
   occupancyPct: number;
+  isAccessible: boolean;
 };
 export type MapData = { nodes: MapNode[]; edges: MapEdge[]; shelters: MapShelter[] };
 export type Zone = { id: string; name: string; centerLat: number; centerLng: number };
@@ -31,6 +33,8 @@ export type RouteResult = {
   distanceM: number;
   etaMin: number;
   rerouted: boolean;
+  /** true when the route was computed on accessible edges only (priority citizen) */
+  accessible: boolean;
   reason: RouteReason | null;
 };
 export type TrafficEdge = {
@@ -39,6 +43,7 @@ export type TrafficEdge = {
   toNodeId: string;
   lengthM: number;
   status: RoadStatus;
+  isAccessible?: boolean;
 };
 
 export type SosStatus = "new" | "assigned" | "resolved";
@@ -49,6 +54,7 @@ export type DashboardSos = {
   id: string;
   type: SosType;
   status: SosStatus;
+  priority: number;
   zoneName: string;
   lat: number;
   lng: number;
@@ -64,7 +70,7 @@ export type DashboardAlert = {
   createdAt: string;
 };
 export type DashboardData = {
-  stats: { activeSos: number; safeCitizens: number; criticalShelters: number; availableTeams: number };
+  stats: { activeSos: number; prioritySos: number; safeCitizens: number; criticalShelters: number; availableTeams: number };
   shelters: (MapShelter & { zoneName: string })[];
   teams: DashboardTeam[];
   sos: DashboardSos[];

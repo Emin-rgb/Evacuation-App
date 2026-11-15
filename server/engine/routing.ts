@@ -4,18 +4,22 @@ export type GraphEdge = {
   toNodeId: string;
   lengthM: number;
   status: "open" | "closed";
+  isAccessible?: boolean;
 };
+
+export type RouteOptions = { accessibleOnly?: boolean };
 
 export type ShortestPaths = {
   dist: Map<string, number>;
   prev: Map<string, string>;
 };
 
-/** Dijkstra over open edges only (roads are two-way). */
-export function shortestPaths(edges: GraphEdge[], startNodeId: string): ShortestPaths {
+/** Dijkstra over open edges only (roads are two-way). With `accessibleOnly`, edges flagged `isAccessible: false` are skipped too. */
+export function shortestPaths(edges: GraphEdge[], startNodeId: string, opts: RouteOptions = {}): ShortestPaths {
   const adj = new Map<string, { to: string; w: number }[]>();
   for (const e of edges) {
     if (e.status !== "open") continue;
+    if (opts.accessibleOnly && e.isAccessible === false) continue;
     if (!adj.has(e.fromNodeId)) adj.set(e.fromNodeId, []);
     if (!adj.has(e.toNodeId)) adj.set(e.toNodeId, []);
     adj.get(e.fromNodeId)!.push({ to: e.toNodeId, w: e.lengthM });
@@ -62,17 +66,19 @@ export function buildPath(prev: Map<string, string>, startNodeId: string, endNod
 
 export const FULL_PCT = 90;
 
-export type Candidate = { id: string; nodeId: string; capacity: number; occupancy: number };
+export type Candidate = { id: string; nodeId: string; capacity: number; occupancy: number; isAccessible?: boolean };
 
 /** Nearest reachable candidate by (walkIn + graph distance + walkOut); skips shelters at/above FULL_PCT. */
 export function pickShelter<T extends Candidate>(
   candidates: T[],
   dist: Map<string, number>,
   cost: (s: T, graphDist: number) => number,
+  opts: RouteOptions = {},
 ): { shelter: T; total: number } | null {
   let best: { shelter: T; total: number } | null = null;
   for (const s of candidates) {
     if ((s.occupancy / s.capacity) * 100 >= FULL_PCT) continue;
+    if (opts.accessibleOnly && s.isAccessible === false) continue;
     const d = dist.get(s.nodeId);
     if (d === undefined) continue;
     const total = cost(s, d);

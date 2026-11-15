@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { api } from "@/lib/api";
-import { t } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/provider";
 import type { DashboardData, MapData, TeamStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -49,6 +49,7 @@ function Empty({ children }: { children: string }) {
 }
 
 export function DispatcherView() {
+  const t = useT();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [data, setData] = useState<DashboardData | null>(null);
   const [map, setMap] = useState<MapData | null>(null);
@@ -99,7 +100,7 @@ export function DispatcherView() {
     () =>
       data?.sos
         .filter((s) => s.status !== "resolved")
-        .map(({ id, lat, lng, type }) => ({ id, lat, lng, type })),
+        .map(({ id, lat, lng, type, priority }) => ({ id, lat, lng, type, priority })),
     [data],
   );
 
@@ -138,10 +139,15 @@ export function DispatcherView() {
   }
 
   const kpis = [
-    { label: t.dispatcher.kpiSos, value: data.stats.activeSos, tone: "text-red-600" },
-    { label: t.dispatcher.kpiSafe, value: data.stats.safeCitizens, tone: "text-emerald-600" },
-    { label: t.dispatcher.kpiCritical, value: data.stats.criticalShelters, tone: "text-amber-600" },
-    { label: t.dispatcher.kpiTeams, value: data.stats.availableTeams, tone: "" },
+    {
+      label: t.dispatcher.kpiSos,
+      value: data.stats.activeSos,
+      tone: "text-red-600",
+      sub: data.stats.prioritySos > 0 ? `${t.dispatcher.kpiPriority}: ${data.stats.prioritySos}` : null,
+    },
+    { label: t.dispatcher.kpiSafe, value: data.stats.safeCitizens, tone: "text-emerald-600", sub: null },
+    { label: t.dispatcher.kpiCritical, value: data.stats.criticalShelters, tone: "text-amber-600", sub: null },
+    { label: t.dispatcher.kpiTeams, value: data.stats.availableTeams, tone: "", sub: null },
   ];
 
   return (
@@ -163,6 +169,7 @@ export function DispatcherView() {
             <CardContent className="flex flex-col gap-1">
               <span className={cn("text-3xl font-semibold", k.tone)}>{k.value}</span>
               <span className="text-muted-foreground text-sm">{k.label}</span>
+              {k.sub && <span className="text-xs font-semibold text-red-600">{k.sub}</span>}
             </CardContent>
           </Card>
         ))}
@@ -250,8 +257,13 @@ export function DispatcherView() {
                 </TableHeader>
                 <TableBody>
                   {data.sos.map((s) => (
-                    <TableRow key={s.id}>
-                      <TableCell className="font-medium">{t.dispatcher.sosTypes[s.type]}</TableCell>
+                    <TableRow key={s.id} className={cn(s.priority > 0 && "bg-red-500/10")}>
+                      <TableCell className="font-medium">
+                        <div className="flex flex-wrap items-center gap-2">
+                          {s.priority > 0 && <Badge variant="destructive">{t.dispatcher.priorityBadge}</Badge>}
+                          {t.dispatcher.sosTypes[s.type]}
+                        </div>
+                      </TableCell>
                       <TableCell>{s.zoneName}</TableCell>
                       <TableCell>
                         <Badge variant={s.status === "new" ? "destructive" : "secondary"}>

@@ -3,12 +3,15 @@ import { db } from "@/server/db";
 import { roadNodes, shelters } from "@/server/db/schema";
 import { haversineM, nearestNode, type LatLng } from "@/server/engine/geo";
 import { FULL_PCT, buildPath, pickShelter, shortestPaths } from "@/server/engine/routing";
+import { getCitizenRole } from "@/server/services/citizen.service";
 import { trafficProvider } from "@/server/providers/traffic.provider";
 import type { RouteReason, RouteResult } from "@/lib/types";
 
 const WALK_M_PER_MIN = 80;
 
-export async function findRoute(origin: LatLng, prevShelterId?: string): Promise<RouteResult | null> {
+export async function findRoute(origin: LatLng, prevShelterId?: string, citizenId?: string): Promise<RouteResult | null> {
+  const accessibleOnly = citizenId ? (await getCitizenRole(citizenId)) === "priority" : false;
+  const opts = { accessibleOnly };
   const [nodes, edges, active] = await Promise.all([
     db.select().from(roadNodes),
     trafficProvider.getEdges(),
@@ -17,11 +20,11 @@ export async function findRoute(origin: LatLng, prevShelterId?: string): Promise
   const start = nearestNode(origin, nodes);
   if (!start) return null;
 
-  const { dist, prev } = shortestPaths(edges, start.id);
+  const { dist, prev } = shortestPaths(edges, start.id, opts);
   const nodeById = new Map(nodes.map((n) => [n.id, n]));
   const walkIn = haversineM(origin, start);
 
-  const best = pickShelter(active, dist, (s, d) => walkIn + d + haversineM(nodeById.get(s.nodeId)!, s));
+  const best = pickShelter(active, dist, (s, d) => walkIn + d + haversineM(nodeById.get(s.nodeId)!, s), opts);
   if (!best) return null;
 
   const s = best.shelter;
@@ -38,7 +41,7 @@ export async function findRoute(origin: LatLng, prevShelterId?: string): Promise
       reason = oldFull ? "shelter_full" : "road_closed";
     } else {
       // same shelter: did closures force a detour vs. the all-open graph?
-      const open = shortestPaths(edges.map((e) => ({ ...e, status: "open" as const })), start.id);
+      const open = shortestPaths(edges.map((e) => ({ ...e, status: "open" as const })), start.id, opts);
       const ideal = buildPath(open.prev, start.id, s.nodeId).join();
       if (ideal !== buildPath(prev, start.id, s.nodeId).join()) reason = "road_closed";
     }
@@ -54,11 +57,13 @@ export async function findRoute(origin: LatLng, prevShelterId?: string): Promise
       capacity: s.capacity,
       occupancy: s.occupancy,
       occupancyPct: Math.round((s.occupancy / s.capacity) * 100),
+      isAccessible: s.isAccessible,
     },
     path: [origin, ...path, { lat: s.lat, lng: s.lng }],
     distanceM,
     etaMin: Math.max(1, Math.round(distanceM / WALK_M_PER_MIN)),
     rerouted: reason !== null,
+    accessible: accessibleOnly,
     reason,
   };
 }

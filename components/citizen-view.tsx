@@ -8,9 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
-import { t } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/provider";
 import type { MapData, NearestShelter, RouteReason, RouteResult, Zone } from "@/lib/types";
+import { useCitizen } from "@/lib/use-citizen";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 type Origin = { lat: number; lng: number };
 
@@ -25,6 +27,7 @@ function formatDistance(m: number) {
 }
 
 export function CitizenView() {
+  const t = useT();
   const [map, setMap] = useState<MapData | null>(null);
   const [mapError, setMapError] = useState(false);
   const [zones, setZones] = useState<Zone[]>([]);
@@ -37,6 +40,9 @@ export function CitizenView() {
   const [route, setRoute] = useState<RouteResult | null>(null);
   const [routeLoading, setRouteLoading] = useState(false);
   const [routeError, setRouteError] = useState<"none" | "error" | null>(null);
+
+  const { citizenId, role, setRole, withCitizen } = useCitizen(origin);
+  const routeCitizenId = role === "priority" ? (citizenId ?? undefined) : undefined;
 
   const [banner, setBanner] = useState<{ reason: RouteReason; from: string; to: string } | null>(null);
   const prevShelter = useRef<{ id: string; name: string } | null>(null);
@@ -80,7 +86,7 @@ export function CitizenView() {
     setRoute(null);
     const poll = (first: boolean) =>
       api
-        .getRoute(origin.lat, origin.lng, prevShelter.current?.id)
+        .getRoute(origin.lat, origin.lng, prevShelter.current?.id, routeCitizenId)
         .then((r) => {
           if (cancelled) return;
           if (r.rerouted && r.reason && prevShelter.current) {
@@ -98,7 +104,7 @@ export function CitizenView() {
       cancelled = true;
       clearInterval(timer);
     };
-  }, [origin]);
+  }, [origin, routeCitizenId]);
 
   function pickZone(id: string) {
     setZoneId(id);
@@ -125,6 +131,10 @@ export function CitizenView() {
       fallback,
       { timeout: 6000 },
     );
+  }
+
+  function toggleRole(checked: boolean) {
+    setRole(checked ? "priority" : "standard").catch(() => toast.error(t.citizen.roleFailed));
   }
 
   const top = shelters?.slice(0, 3) ?? [];
@@ -171,11 +181,26 @@ export function CitizenView() {
             {locating ? t.citizen.locating : t.citizen.myLocation}
           </Button>
           {locationNote && <p className="text-sm text-muted-foreground">{t.citizen.locationFailed}</p>}
+          <label className="flex items-start gap-2 rounded-lg border p-3 text-sm">
+            <input
+              type="checkbox"
+              className="mt-0.5 size-4"
+              checked={role === "priority"}
+              onChange={(e) => toggleRole(e.target.checked)}
+            />
+            <span className="flex flex-col">
+              <span className="font-medium">{t.citizen.roleToggle}</span>
+              <span className="text-muted-foreground">{t.citizen.roleHint}</span>
+            </span>
+          </label>
         </div>
 
         {origin && (
           <div className="rounded-xl border border-blue-600 p-4">
-            <h2 className="text-lg font-semibold">{t.citizen.route}</h2>
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="text-lg font-semibold">{t.citizen.route}</h2>
+              {route?.accessible && <Badge variant="secondary">{t.citizen.accessibleRoute}</Badge>}
+            </div>
             {banner && (
               <div role="status" className="mt-2 rounded-lg bg-amber-100 p-3 text-sm text-amber-900">
                 <div className="font-semibold">{t.citizen.reroute[banner.reason]}</div>
@@ -223,7 +248,10 @@ export function CitizenView() {
             <div key={s.id} className={cn("rounded-xl border p-4", i === 0 && "border-primary")}>
               <div className="flex items-start justify-between gap-2">
                 <div className="font-medium">{s.name}</div>
-                <Badge variant="secondary">{t.citizen.types[s.type]}</Badge>
+                <div className="flex flex-wrap justify-end gap-1">
+                  {!s.isAccessible && <Badge variant="outline">{t.citizen.notAccessible}</Badge>}
+                  <Badge variant="secondary">{t.citizen.types[s.type]}</Badge>
+                </div>
               </div>
               <div className="mt-1 text-sm text-muted-foreground">{formatDistance(s.distanceM)}</div>
               <div className="mt-3 flex items-center gap-3">
@@ -241,7 +269,7 @@ export function CitizenView() {
           ))
         )}
       </div>
-      <CitizenActions origin={origin} />
+      <CitizenActions origin={origin} withCitizen={withCitizen} />
     </div>
   );
 }
