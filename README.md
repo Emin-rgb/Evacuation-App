@@ -3,7 +3,7 @@
 
 Digital Azerbaijan Challenge finalı üçün 4 saatlıq işlək prototip. Zəlzələ, sel və ya digər fövqəladə hallarda vətəndaş ən yaxın boş toplanış məntəqəsini və təhlükəsiz təxliyə marşrutunu görür, bir kliklə SOS göndərir; dispetçer isə SOS-ları, məntəqələrin doluluğunu və briqadaları canlı paneldə izləyir, **Qırmızı Həyəcanı** bir kliklə təsdiqləyir.
 
-> **Canlı demo:** Vercel URL-ni bura əlavə edin. **API sənədləri (Swagger):** `/api-docs.html`
+> **Canlı demo:** <https://evacuation-baku.vercel.app> · **Vətəndaş:** [/citizen](https://evacuation-baku.vercel.app/citizen) · **Dispetçer:** [/dispatcher](https://evacuation-baku.vercel.app/dispatcher) · **API sənədləri (Swagger):** <https://evacuation-baku.vercel.app/api-docs.html>
 
 ---
 
@@ -51,6 +51,17 @@ Fövqəladə hallarda vətəndaşlar hansı toplanış məntəqəsinin nə qəd�
 - **Bir kliklə təsdiq:** "Əlavə Xilasetmə Briqadası Göndər və Yeni Toplanış Nöqtəsi Aç". Ən yaxın briqada `en_route` olur, ehtiyat məntəqə açılır və vətəndaş xəritəsində görünür. Təsdiq edən istifadəçi qeyd olunur.
 - **Simulyator** (demo üçün): yolu bağla/aç, məntəqə doluluğunu dəyiş, yaxınlıqda SOS yarat, xarici marşrut API-sini "çökdür", zəlzələ/sel riskini simulyasiya et.
 - Rollar: `dispatcher` (hər şey) və `supervisor` (yalnız oxuma).
+
+### Profillər və rollar
+
+| Profil | Giriş | Nə edə bilər | Harada |
+| ------ | ----- | ------------ | ------ |
+| **Vətəndaş** (standart) | Giriş yoxdur, anonim UUID | Məntəqələrə və marşruta baxır, SOS göndərir, "Təhlükəsizəm" | `/citizen` |
+| **Vətəndaş, xüsusi qayğı** | Giriş yoxdur; "Xüsusi qayğıya ehtiyacım var" açarı | Yuxarıdakılar + SOS avtomatik *Kritik Prioritet #1*, yalnız əlçatan marşrut | `/citizen` |
+| **Supervisor** | `supervisor@dac.az` / `supervisor123` | Dispetçer panelini **yalnız oxuyur** (təsdiq və simulyator düymələri söndürülüb, API 403 qaytarır) | `/dispatcher` |
+| **Dispetçer** (admin səviyyəli rol) | `nigar@dac.az` və ya `rauf@dac.az` / `dispatcher123` | Hər şey: Qırmızı Həyəcanı təsdiq/rədd, Simulyator, yol və məntəqə dəyişikliyi | `/dispatcher` |
+
+Ayrıca "admin" rolu yoxdur: ən yüksək səlahiyyətli profil **dispetçerdir**. Hesab idarəetmə paneli, qeydiyyat və parol sıfırlama hələ yoxdur (bax [bölmə 11](#11-məlum-problemlər-və-qalan-işlər), #13).
 
 ## 3. Sistem arxitekturası
 
@@ -176,7 +187,7 @@ Sıfırlamaq üçün: `npm run db:seed`. (Yasamal və Xətai-də ən yaxın mən
 
 ## 6. API və Swagger
 
-- **Swagger UI:** tətbiq işləyərkən `/api-docs.html` (məs. <http://localhost:3000/api-docs.html>). Swagger interfeysi CDN-dən yüklənir, ona görə internet lazımdır.
+- **Swagger UI:** canlı: <https://evacuation-baku.vercel.app/api-docs.html>, lokal: <http://localhost:3000/api-docs.html>. Swagger interfeysi CDN-dən yüklənir, ona görə internet lazımdır.
 - **OpenAPI 3.0 spesifikasiyası:** [`public/openapi.yaml`](public/openapi.yaml) (21 endpoint).
 - Xəta formatı həmişə `{ "error": "mesaj" }`; statuslar: `400` (yanlış giriş), `401` (sessiya yox), `403` (rol kifayət etmir), `404`, `409` (həyəcan artıq emal olunub), `423` (hesab bloklanıb), `429` (limit), `500`.
 
@@ -255,7 +266,7 @@ findRoute → trafficProvider
 
 ## 10. Yerləşdirmə (Deploy)
 
-Vercel-də yerləşdirilir. Layihənin mühit dəyişənlərində `DATABASE_URL` və `JWT_SECRET` təyin edin, `npm run build`-in lokal keçdiyini yoxlayın, sonra deploy edin. Verilənlər bazasına qarşı bir dəfə `npm run db:push` və `npm run db:seed` işlədin (demo vəziyyətini sıfırlamaq üçün `db:seed`-i təkrar edin).
+Canlı ünvan: <https://evacuation-baku.vercel.app>. Vercel-də yerləşdirilir. Layihənin mühit dəyişənlərində `DATABASE_URL` və `JWT_SECRET` təyin edin, `npm run build`-in lokal keçdiyini yoxlayın, sonra deploy edin. Verilənlər bazasına qarşı bir dəfə `npm run db:push` və `npm run db:seed` işlədin (demo vəziyyətini sıfırlamaq üçün `db:seed`-i təkrar edin).
 
 ## 11. Məlum problemlər və qalan işlər
 
