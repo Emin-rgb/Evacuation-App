@@ -23,3 +23,20 @@ export type MapShelter = {
 export type MapData = { nodes: MapNode[]; edges: MapEdge[]; shelters: MapShelter[] };
 export type Zone = { id: string; name: string; centerLat: number; centerLng: number };
 export type NearestShelter = MapShelter & { distanceM: number };
+
+export type RouteReason = "road_closed" | "shelter_full";
+export type RouteResult = {
+  shelter: MapShelter;
+  path: { lat: number; lng: number }[];
+  distanceM: number;
+  etaMin: number;
+  rerouted: boolean;
+  reason: RouteReason | null;
+};
+export type TrafficEdge = {
+  id: string;
+  fromNodeId: string;
+  toNodeId: string;
+  lengthM: number;
+  status: RoadStatus;
+};

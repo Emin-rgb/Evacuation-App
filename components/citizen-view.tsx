@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
 import { t } from "@/lib/i18n";
-import type { MapData, NearestShelter, Zone } from "@/lib/types";
+import type { MapData, NearestShelter, RouteResult, Zone } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type Origin = { lat: number; lng: number };
@@ -33,6 +33,9 @@ export function CitizenView() {
   const [locationNote, setLocationNote] = useState(false);
   const [shelters, setShelters] = useState<NearestShelter[] | null>(null);
   const [sheltersError, setSheltersError] = useState(false);
+  const [route, setRoute] = useState<RouteResult | null>(null);
+  const [routeLoading, setRouteLoading] = useState(false);
+  const [routeError, setRouteError] = useState<"none" | "error" | null>(null);
 
   const loadMap = useCallback(() => {
     setMapError(false);
@@ -62,6 +65,22 @@ export function CitizenView() {
   useEffect(() => {
     if (origin) loadShelters(origin);
   }, [origin, loadShelters]);
+
+  useEffect(() => {
+    if (!origin) return;
+    let cancelled = false;
+    setRouteLoading(true);
+    setRouteError(null);
+    setRoute(null);
+    api
+      .getRoute(origin.lat, origin.lng)
+      .then((r) => !cancelled && setRoute(r))
+      .catch((e: Error) => !cancelled && setRouteError(e.message === "No reachable shelter" ? "none" : "error"))
+      .finally(() => !cancelled && setRouteLoading(false));
+    return () => {
+      cancelled = true;
+    };
+  }, [origin]);
 
   function pickZone(id: string) {
     setZoneId(id);
@@ -108,7 +127,7 @@ export function CitizenView() {
           {t.map.empty}
         </div>
       ) : (
-        <CityMap data={map} highlightShelterId={top[0]?.id} />
+        <CityMap data={map} route={route?.path} highlightShelterId={route?.shelter.id ?? top[0]?.id} />
       )}
 
       <div className="flex flex-col gap-4">
@@ -135,6 +154,29 @@ export function CitizenView() {
           </Button>
           {locationNote && <p className="text-sm text-muted-foreground">{t.citizen.locationFailed}</p>}
         </div>
+
+        {origin && (
+          <div className="rounded-xl border border-blue-600 p-4">
+            <h2 className="text-lg font-semibold">{t.citizen.route}</h2>
+            {routeLoading ? (
+              <Skeleton className="mt-2 h-12 w-full" />
+            ) : route ? (
+              <div className="mt-1 text-sm">
+                <div className="font-medium">
+                  {t.citizen.routeTarget}: {route.shelter.name}
+                </div>
+                <div className="text-muted-foreground">
+                  {t.citizen.routeDistance}: {formatDistance(route.distanceM)} · {t.citizen.routeEta}:{" "}
+                  {route.etaMin} {t.citizen.routeMin}
+                </div>
+              </div>
+            ) : (
+              <p className="mt-1 text-sm text-muted-foreground">
+                {routeError === "error" ? t.citizen.routeError : t.citizen.routeNone}
+              </p>
+            )}
+          </div>
+        )}
 
         <h2 className="text-lg font-semibold">{t.citizen.nearest}</h2>
         {!origin ? (

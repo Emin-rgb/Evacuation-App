@@ -76,11 +76,11 @@ Each task ends with a **✅ Browser check**. Do them in order; tick them off whe
   - [x] 4.4 Shelter cards: name, type badge, distance, occupancy bar; empty state
   - ✅ Changing district re-sorts the 3 nearest shelters
 
-- [ ] **5. Evacuation route**
-  - [ ] 5.1 `server/engine/routing.ts`: Dijkstra over open edges only
-  - [ ] 5.2 `server/providers/traffic.provider.ts`: `TrafficProvider` + `SimulatedTrafficProvider` (reads `road_edges`); `GET /api/traffic`
-  - [ ] 5.3 `routing.service.ts` + `GET /api/route?lat&lng` → `{ shelter, path, distanceM, rerouted, reason }`; picks the nearest reachable shelter <90%
-  - [ ] 5.4 Draw the route on the map + route card (target shelter, distance, ETA on foot)
+- [x] **5. Evacuation route**
+  - [x] 5.1 `server/engine/routing.ts`: Dijkstra over open edges only
+  - [x] 5.2 `server/providers/traffic.provider.ts`: `TrafficProvider` + `SimulatedTrafficProvider` (reads `road_edges`); `GET /api/traffic`
+  - [x] 5.3 `routing.service.ts` + `GET /api/route?lat&lng` → `{ shelter, path, distanceM, rerouted, reason }`; picks the nearest reachable shelter <90%
+  - [x] 5.4 Draw the route on the map + route card (target shelter, distance, ETA on foot)
   - ✅ The route line is highlighted from the citizen location to the recommended shelter
 
 - [ ] **6. Dispatcher dashboard (read-only, live)**
