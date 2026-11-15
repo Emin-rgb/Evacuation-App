@@ -51,5 +51,7 @@ export const api = {
   markSafe: (id: string) => patch<{ id: string; status: string }>(`/api/citizens/${id}`, { status: "safe" }),
   sendSos: (citizenId: string, type: SosType, lat: number, lng: number) =>
     post<{ id: string }>("/api/sos", { citizenId, type, lat, lng }),
+  sosBurst: (lat: number, lng: number, count: number) =>
+    post<{ created: number; alertsCreated: number }>("/api/simulate/sos-burst", { lat, lng, count }),
   getTraffic: () => get<TrafficEdge[]>("/api/traffic"),
 };

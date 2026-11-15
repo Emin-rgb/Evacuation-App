@@ -115,11 +115,11 @@ Each task ends with a **✅ Browser check**. Do them in order; tick them off whe
   - [x] 10.4 `PATCH /api/citizens/:id` `{status:'safe'}` + "Təhlükəsizəm" button with a confirmed state
   - ✅ SOS from `/citizen` appears in the dispatcher feed + map within 3 s; "I'm safe" increments the KPI
 
-- [ ] **11. Crisis Red Alert engine**
-  - [ ] 11.1 `server/engine/crisis.ts`: `detectAlerts()`, with cluster = ≥4 distinct citizens within 500 m in the last 5 min, and overload = shelter >95%; skips when an open alert already exists for that zone/shelter
-  - [ ] 11.2 `alert.service.ts`: run detection after each SOS insert and each occupancy change
-  - [ ] 11.3 `POST /api/simulate/sos-burst` `{lat,lng,count}` + Simulator button "3 SOS yaxınlıqda"
-  - [ ] 11.4 Red Alert cards at the top of `/dispatcher` (pulsing red, zone, SOS count, time)
+- [x] **11. Crisis Red Alert engine**
+  - [x] 11.1 `server/engine/crisis.ts`: `detectAlerts()`, with cluster = ≥4 distinct citizens within 500 m in the last 5 min, and overload = shelter >95%; skips when an open alert already exists for that zone/shelter
+  - [x] 11.2 `alert.service.ts`: run detection after each SOS insert and each occupancy change
+  - [x] 11.3 `POST /api/simulate/sos-burst` `{lat,lng,count}` + Simulator button "3 SOS yaxınlıqda"
+  - [x] 11.4 Red Alert cards at the top of `/dispatcher` (pulsing red, zone, SOS count, time)
   - ✅ Citizen SOS + burst → Red Alert appears; shelter to 96% → overload alert appears
 
 - [ ] **12. One-click approval**

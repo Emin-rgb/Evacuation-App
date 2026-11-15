@@ -130,13 +130,27 @@ export function DispatcherView() {
           <Empty>{t.dispatcher.noAlerts}</Empty>
         ) : (
           data.alerts.map((a) => (
-            <div key={a.id} className="rounded-xl border border-red-500/40 bg-red-500/10 p-4">
-              <p className="font-medium">
-                {a.zoneName} · {a.message}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                SOS: {a.sosCount} · {minutesAgo(a.createdAt)} {t.dispatcher.min} {t.dispatcher.ago}
-              </p>
+            <div
+              key={a.id}
+              role="alert"
+              className="flex animate-pulse items-center justify-between gap-4 rounded-xl border border-red-500 bg-red-500/15 p-4"
+            >
+              <div>
+                <p className="font-semibold text-red-700 dark:text-red-400">
+                  {a.kind === "sos_cluster" ? t.dispatcher.alertCluster : t.dispatcher.alertOverload} · {a.zoneName}
+                </p>
+                <p className="text-sm text-muted-foreground">{a.message}</p>
+              </div>
+              <div className="text-right text-sm text-muted-foreground">
+                {a.kind === "sos_cluster" && (
+                  <p>
+                    {t.dispatcher.sosCount}: {a.sosCount}
+                  </p>
+                )}
+                <p>
+                  {minutesAgo(a.createdAt)} {t.dispatcher.min} {t.dispatcher.ago}
+                </p>
+              </div>
             </div>
           ))
         )}

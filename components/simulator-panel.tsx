@@ -63,6 +63,24 @@ function ShelterRow({ shelter, onChanged }: { shelter: MapShelter; onChanged: ()
 
 export function SimulatorPanel({ map, onChanged }: { map: MapData; onChanged: () => void }) {
   const [busyRoad, setBusyRoad] = useState<string | null>(null);
+  const [bursting, setBursting] = useState(false);
+
+  async function burst() {
+    const n = map.nodes.length;
+    if (n === 0) return;
+    const lat = map.nodes.reduce((sum, p) => sum + p.lat, 0) / n;
+    const lng = map.nodes.reduce((sum, p) => sum + p.lng, 0) / n;
+    setBursting(true);
+    try {
+      const res = await api.sosBurst(lat, lng, 3);
+      toast.success(`${t.simulator.burstToast}: ${res.created}`);
+      onChanged();
+    } catch {
+      toast.error(t.simulator.error);
+    } finally {
+      setBursting(false);
+    }
+  }
 
   async function toggleRoad(id: string, closeIt: boolean) {
     setBusyRoad(id);
@@ -88,6 +106,12 @@ export function SimulatorPanel({ map, onChanged }: { map: MapData; onChanged: ()
           <SheetDescription>{t.simulator.description}</SheetDescription>
         </SheetHeader>
         <div className="flex flex-col gap-6 px-4 pb-6">
+          <section className="flex flex-col gap-2">
+            <h3 className="font-semibold">{t.simulator.burstTitle}</h3>
+            <Button variant="destructive" disabled={bursting} onClick={burst}>
+              {t.simulator.burst}
+            </Button>
+          </section>
           <section className="flex flex-col gap-2">
             <h3 className="font-semibold">{t.simulator.shelters}</h3>
             <ul className="flex flex-col gap-2">

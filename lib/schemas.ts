@@ -22,3 +22,8 @@ export const sosCreateSchema = z.object({
   lat: z.number().min(-90).max(90),
   lng: z.number().min(-180).max(180),
 });
+export const sosBurstSchema = z.object({
+  lat: z.number().min(-90).max(90),
+  lng: z.number().min(-180).max(180),
+  count: z.number().int().min(1).max(20),
+});
