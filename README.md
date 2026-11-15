@@ -94,10 +94,10 @@ Of the 10 shelters, 8 are active and 2 are **reserve** and inactive (`Xətai Oli
 
 ## Demo script
 
-Two windows side by side: `/citizen` and `/dispatcher` with the Simulator open.
+Two windows side by side: `/citizen` and `/dispatcher` (sign in as `nigar@dac.az` / `dispatcher123`, then open the Simulator).
 
-1. **Citizen:** choose **Yasamal**. The 3 nearest shelters appear with occupancy bars and a route to the nearest one is drawn.
-2. **Simulator:** close a road on that route. Within 3 s the citizen sees "road closed" and a new route.
+1. **Citizen:** choose **Nərimanov**. The 3 nearest shelters appear with occupancy bars and a route to the nearest one is drawn.
+2. **Simulator:** close **Tbilisi yolu** (it is on that route). Within 3 s the citizen sees "road closed" and a new route.
 3. **Simulator:** set the target shelter to **92%**. The citizen is rerouted to the next shelter ("shelter 90% full").
 4. **Citizen:** SOS → medical. It shows up in the dispatcher SOS feed and on the map.
 5. **Simulator:** "3 SOS nearby". A **Red Alert** card appears.

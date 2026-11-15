@@ -205,8 +205,8 @@ export const az = {
     hereCitizen: "Siz vətəndaşsınız. Burada: rayon seçə, sığınacağa marşrutu izləyə, SOS göndərə və ya “Təhlükəsizəm” düyməsini sıxa bilərsiniz.",
     hereDispatcher: "Siz dispetçersiniz. Burada: SOS, sığınacaq və briqadaları canlı izləyə, Simulyatorla hadisələr yarada və Qırmızı Həyəcanları təsdiqləyə bilərsiniz.",
     steps: [
-      { title: "Rayon seçin", action: "Vətəndaş: siyahıdan “Yasamal” seçin.", see: "Doluluq zolaqları ilə 3 ən yaxın toplanış nöqtəsi və xəritədə mavi marşrut." },
-      { title: "Yolu bağlayın", action: "Dispetçer: Simulyatoru açıb marşrutdakı yolu bağlayın.", see: "3 saniyə ərzində vətəndaş “Yol bağlandı” və yeni marşrut görür." },
+      { title: "Rayon seçin", action: "Vətəndaş: siyahıdan “Nərimanov” seçin.", see: "Doluluq zolaqları ilə 3 ən yaxın toplanış nöqtəsi və xəritədə mavi marşrut." },
+      { title: "Yolu bağlayın", action: "Dispetçer: Simulyatoru açıb “Tbilisi yolu” yolunu bağlayın.", see: "3 saniyə ərzində vətəndaş “Yol bağlandı” və yeni marşrut görür." },
       { title: "Sığınacağı doldurun", action: "Dispetçer: Simulyatorda hədəf sığınacağı 92% edin.", see: "Vətəndaş növbəti sığınacağa yönləndirilir: “Məntəqə 90% dolub”." },
       { title: "SOS göndərin", action: "Vətəndaş: SOS, sonra “Tibbi yardım” düyməsini sıxın.", see: "Siqnal dispetçerin SOS siyahısında və xəritədə görünür." },
       { title: "SOS partlayışı", action: "Dispetçer: Simulyatorda “Yaxınlıqda 3 SOS” düyməsini basın.", see: "Yuxarıda yanıb-sönən Qırmızı Həyəcan kartı görünür." },

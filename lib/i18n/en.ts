@@ -204,8 +204,8 @@ export const en: Dictionary = {
     hereCitizen: "You are a citizen. Here you can: pick your district, follow the route to a shelter, send an SOS or tap “I'm safe”.",
     hereDispatcher: "You are the dispatcher. Here you can: watch SOS, shelters and teams live, use the Simulator to create events, and approve Red Alerts.",
     steps: [
-      { title: "Pick a district", action: "Citizen: choose “Yasamal” in the district list.", see: "The 3 nearest gathering points with occupancy bars, and a blue route on the map." },
-      { title: "Close a road", action: "Dispatcher: open Simulator and close a road on the route.", see: "Within 3 seconds the citizen sees “Road closed” and a new route." },
+      { title: "Pick a district", action: "Citizen: choose “Nərimanov” in the district list.", see: "The 3 nearest gathering points with occupancy bars, and a blue route on the map." },
+      { title: "Close a road", action: "Dispatcher: open Simulator and close the road “Tbilisi yolu”.", see: "Within 3 seconds the citizen sees “Road closed” and a new route." },
       { title: "Fill the shelter", action: "Dispatcher: in Simulator set the target shelter to 92%.", see: "The citizen is rerouted to the next shelter: “Shelter is 90% full”." },
       { title: "Send an SOS", action: "Citizen: tap SOS, then “Medical help”.", see: "The signal appears in the dispatcher's SOS feed and on the map." },
       { title: "SOS burst", action: "Dispatcher: in Simulator press “3 SOS nearby”.", see: "A pulsing Red Alert card appears at the top." },

@@ -17,8 +17,8 @@
 
 ## Demo script (what the judges will see, in order; two windows side by side)
 
-1. Citizen view → choose **Yasamal** → 3 nearest shelters with occupancy bars → route to the nearest shelter is drawn on the map.
-2. Dispatcher → Simulator → **close a road** on that route → within 3 s the citizen sees "Yol bağlandı → alternativ marşrut" and a new route.
+1. Citizen view → choose **Nərimanov** → 3 nearest shelters with occupancy bars → route to the nearest shelter is drawn on the map.
+2. Dispatcher (sign in first: `nigar@dac.az`) → Simulator → **close "Tbilisi yolu"** (on that route) → within 3 s the citizen sees "Yol bağlandı → alternativ marşrut" and a new route.
 3. Simulator → set the target shelter to **92%** → citizen is rerouted to the next shelter ("Məntəqə 90% dolub").
 4. Citizen taps **SOS → Tibbi yardım** → it appears in the dispatcher SOS feed and on the map.
 5. Simulator → **send 3 more SOS nearby** → a **Red Alert** card appears: "Əlavə Xilasetmə Briqadası Göndər və Yeni Toplanış Nöqtəsi Aç".
@@ -260,8 +260,8 @@ Each task ends with a **✅ Browser check**. Do them in order; tick them off whe
   - (was) Open questions: (1) demo emails/names and the demo password; (2) is "supervisor" the right name for the read-only role; (3) should a failed login lock the account for a few minutes, or are rate limits enough (default: rate limits only).
 
 - [ ] **17. Polish (demo-polish skill): CODE FREEZE at 3:15**
-  - [ ] 16.1 Re-seed to the demo starting state; rehearse the 8-step demo script twice
-  - [ ] 16.2 Check every screen's loading / empty / error states, mobile width for `/citizen`
+  - [x] 16.1 Re-seed to the demo starting state; rehearse the 8-step demo script (done through the API with a script; found and fixed: seed did not reset simulator flags, so the demo could start in offline mode; "close a road" did not trigger a reroute from Yasamal, so the script now uses Nərimanov + "Tbilisi yolu")
+  - [ ] 16.2 (NOT done: the browser tool failed; do by hand) Check every screen's loading / empty / error states, mobile width for `/citizen`
   - ✅ Full demo script runs on production without a hitch
 
 ## Decisions

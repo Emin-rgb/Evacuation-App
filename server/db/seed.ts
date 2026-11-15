@@ -91,6 +91,8 @@ async function main() {
   const s = await import("./schema");
 
   // children first
+  // Simulator switches (routing outage, risk simulation) must not survive a reset: the demo starts calm and live.
+  await db.delete(s.systemFlags);
   await db.delete(s.rescueTeams);
   await db.delete(s.alerts);
   await db.delete(s.sosSignals);
