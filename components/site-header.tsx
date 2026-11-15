@@ -18,12 +18,12 @@ export function SiteHeader() {
   ];
   return (
     <header className="border-b bg-background">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
+      <div className="mx-auto flex min-h-14 max-w-6xl flex-wrap items-center justify-between gap-x-4 gap-y-1 px-4 py-2">
         <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight">
           <HugeiconsIcon icon={Shield01Icon} className="size-5 text-primary" aria-hidden="true" />
           {t.app.name}
         </Link>
-        <nav className="flex items-center gap-1">
+        <nav className="flex flex-wrap items-center gap-1">
           {links.map((l) => (
             <Link
               key={l.href}

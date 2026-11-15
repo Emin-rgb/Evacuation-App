@@ -272,7 +272,7 @@ Each task ends with a **✅ Browser check**. Do them in order; tick them off whe
   - [ ] 23.4 Case says "same zone OR 500 m"; only the 500 m rule exists
   - [x] 23.5 (fixed: GPS outside the box falls back to the district centre) SOS returns 400 for real GPS outside the Baku bounding box
   - [x] 23.6 (done: `scripts/smoke-test.ts`, 21 checks pass; CI not set up) Automate the API audit as `scripts/smoke-test.ts` (and add it to CI); today only the engine has unit tests
-  - [ ] 23.7 (partly done: /citizen loads, map ok, no NaN; hydration warning is caused by a browser extension, not our code; still by hand: dispatcher login form in UI, mobile width, empty/error states) Browser pass: console errors, mobile width of `/citizen`, loading/empty/error states, login form, hydration warnings (AZ/EN)
+  - [ ] 23.7 (partly done: mobile 390 px checked on /, /citizen, /dispatcher (header overflow fixed); /citizen loads, map ok, no NaN; hydration warning is caused by a browser extension, not our code; still by hand: dispatcher login form in UI, mobile width, empty/error states) Browser pass: console errors, mobile width of `/citizen`, loading/empty/error states, login form, hydration warnings (AZ/EN)
   - [ ] 23.8 Shared rate limiter (Upstash/Redis), account management (signup, reset, MFA, session revoke), WebSockets instead of polling
   - [ ] 23.9 Technical doc is a hand-built `.docx` (generator lives outside the repo); regenerate or edit it in Word if content changes. Swagger UI needs internet (CDN)
 
