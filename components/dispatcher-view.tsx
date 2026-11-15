@@ -28,7 +28,7 @@ import {
 import { SOS_ICON, SOS_SWATCH } from "@/lib/map-icons";
 import { api } from "@/lib/api";
 import { useT } from "@/lib/i18n/provider";
-import type { DashboardData, MapData, TeamStatus } from "@/lib/types";
+import type { DashboardData, FailureMode, MapData, ProviderHealth, TeamStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const POLL_MS = 3000;
@@ -65,8 +65,13 @@ export function DispatcherView() {
   const [error, setError] = useState(false);
   const [updatedAt, setUpdatedAt] = useState<number | null>(null);
   const [selectedSos, setSelectedSos] = useState<string | null>(null);
+  const [health, setHealth] = useState<(ProviderHealth & { mode: FailureMode }) | null>(null);
 
   const load = useCallback(() => {
+    api
+      .getProviderHealth()
+      .then(setHealth)
+      .catch(() => {});
     Promise.all([api.getDashboard(), api.getMap()])
       .then(([d, m]) => {
         setData(d);
@@ -152,6 +157,8 @@ export function DispatcherView() {
 
   const focusSos = data.sos.find((s) => s.id === selectedSos) ?? null;
 
+  const degraded =
+    !!health && (health.state !== "closed" || health.source !== "live" || health.mode !== "off");
   const kpis: {
     label: string;
     value: number;
@@ -207,7 +214,20 @@ export function DispatcherView() {
           {t.dispatcher.error}
         </p>
       )}
-      <div className="flex justify-end">
+      <div className="flex items-center justify-end gap-3">
+        {health && (
+          <Badge
+            variant={degraded ? "secondary" : "outline"}
+            className={cn(degraded && "bg-amber-100 text-amber-900")}
+          >
+            {t.provider.chipLabel}:{" "}
+            {health.state === "half_open"
+              ? t.provider.chipRecovering
+              : degraded
+                ? t.provider.chipFallback
+                : t.provider.chipLive}
+          </Badge>
+        )}
         <SimulatorPanel map={map} onChanged={load} />
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -292,6 +312,7 @@ export function DispatcherView() {
             data={map}
             sos={sosPoints}
             updatedAt={updatedAt}
+            degraded={degraded}
             highlightSosId={selectedSos}
             focus={focusSos ? [focusSos] : undefined}
             fitKey={focusSos ? `sos-${focusSos.id}` : undefined}

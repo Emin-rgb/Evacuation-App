@@ -1,4 +1,4 @@
-import type { CitizenRole, SosType, DashboardData, MapData, NearestShelter, RoadStatus, RouteResult, TrafficEdge, Zone } from "@/lib/types";
+import type { CitizenRole, FailureMode, ProviderHealth, SosType, DashboardData, MapData, NearestShelter, RoadStatus, RouteResult, TrafficEdge, Zone } from "@/lib/types";
 
 async function get<T>(url: string): Promise<T> {
   const res = await fetch(url, { cache: "no-store" });
@@ -66,5 +66,7 @@ export const api = {
       assignedSos: number;
     }>(`/api/alerts/${id}/approve`, {}),
   dismissAlert: (id: string) => post<{ id: string }>(`/api/alerts/${id}/dismiss`, {}),
+  getProviderHealth: () => get<ProviderHealth & { mode: FailureMode }>("/api/traffic/health"),
+  setProviderMode: (mode: FailureMode) => patch<{ mode: FailureMode }>("/api/simulate/provider", { mode }),
   getTraffic: () => get<TrafficEdge[]>("/api/traffic"),
 };

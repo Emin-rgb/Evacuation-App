@@ -105,6 +105,8 @@ interface TrafficProvider {
 
 `SimulatedTrafficProvider` reads `road_edges`. The routing service depends on the **interface**, so a real routing/traffic API, a cached wrapper, or a fallback chain can be introduced without changing the service or the engine. This is the hook for the "external API outage" scenario (see [future work](#14-future-work)).
 
+Drop 2 wraps the provider in a `ResilientEdges` (circuit breaker, 5 s timeout, last-good snapshot, static graph in `server/data/fallback-graph.ts`). A 503 or a slow response never reaches the user as an error: `GET /api/route` returns `mode: "fallback"` and the UI shows an offline notice. The breaker opens after 2 consecutive failures, so later requests fail fast instead of waiting 5 s each; after a 15 s cooldown one probe request decides whether to close it. Fallback distances are straight-line segment lengths and all roads are assumed open (unless a cached snapshot knows better), so they are approximate and flagged as such.
+
 ### 3.4 Error contract
 
 Every endpoint returns the same error shape, `{ "error": string }`, with a meaningful status: `400` invalid input, `404` unknown entity or no reachable shelter, `409` alert already handled, `500` unexpected (logged server-side, generic message to the client). The UI turns errors into a toast or an error state with a retry button, and stays usable.
@@ -282,7 +284,7 @@ The app is a demo MVP with an intentionally small attack surface, but we applied
 - **Graceful empty/error states.** Every data-driven screen handles loading, empty and failed requests, and recovers on the next successful poll.
 - **No reachable shelter** returns `404` and the citizen UI shows an explicit empty state rather than a broken map.
 - **Idempotent-ish operators.** Approve/dismiss on a handled alert returns `409`; re-seeding resets the demo state deterministically.
-- **Provider seam for outages.** Because routing reads road data through `TrafficProvider`, an outage of a real traffic API can be absorbed by a wrapper that falls back to the last known graph (or the simulated one) and surfaces a "degraded mode" badge. The seam exists; the fallback implementation is future work.
+- **External API outage (Drop 2).** Routing reads road data through a circuit breaker with a 5 s timeout and falls back to the last good snapshot, then to a bundled static graph; the citizen keeps a route and sees an offline notice (see 3.3).
 - **Transactional approval** prevents half-applied dispatches.
 
 ---

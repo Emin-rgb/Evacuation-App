@@ -31,6 +31,8 @@ type Props = {
   highlightSosId?: string | null;
   /** timestamp (ms) of the last successful data refresh, drives the Live badge */
   updatedAt?: number | null;
+  /** external routing API is down: the Live badge shows the backup-mode state */
+  degraded?: boolean;
   /** tap/click/Enter on a shelter marker */
   onShelterClick?: (id: string) => void;
   /** when this key changes the view animates to fit `focus` (e.g. the route) */
@@ -122,7 +124,7 @@ function prefersReducedMotion() {
 
 type Layers = { roads: boolean; shelters: boolean; sos: boolean };
 
-function LiveBadge({ updatedAt }: { updatedAt: number | null | undefined }) {
+function LiveBadge({ updatedAt, degraded }: { updatedAt: number | null | undefined; degraded?: boolean }) {
   const t = useT();
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -130,7 +132,7 @@ function LiveBadge({ updatedAt }: { updatedAt: number | null | undefined }) {
     return () => clearInterval(id);
   }, []);
   const secs = updatedAt ? Math.max(0, Math.round((now - updatedAt) / 1000)) : null;
-  const stale = secs !== null && secs > 9;
+  const stale = (secs !== null && secs > 9) || !!degraded;
   return (
     <div className="bg-background/90 pointer-events-none absolute top-2 left-2 flex items-center gap-2 rounded-full border px-2.5 py-1 text-xs shadow-sm">
       <HugeiconsIcon
@@ -140,7 +142,7 @@ function LiveBadge({ updatedAt }: { updatedAt: number | null | undefined }) {
         aria-hidden="true"
       />
       <span className={cn("font-semibold", stale ? "text-amber-700" : "text-emerald-700")}>
-        {stale ? t.map.delayed : t.map.live}
+        {degraded ? t.map.fallback : stale ? t.map.delayed : t.map.live}
       </span>
       {secs !== null && (
         <span className="text-muted-foreground">
@@ -178,6 +180,7 @@ export function CityMap({
   highlightShelterId,
   highlightSosId,
   updatedAt,
+  degraded,
   onShelterClick,
   fitKey,
   focus,
@@ -682,7 +685,7 @@ export function CityMap({
           )}
         </svg>
 
-        {updatedAt !== undefined && <LiveBadge updatedAt={updatedAt} />}
+        {updatedAt !== undefined && <LiveBadge updatedAt={updatedAt} degraded={degraded} />}
 
         <div className="bg-background absolute top-2 right-2 flex flex-col overflow-hidden rounded-lg border shadow-sm">
           <ZoomButton label={t.map.zoomIn} icon={Add01Icon} onClick={() => zoomCenter(1 / 1.5)} />

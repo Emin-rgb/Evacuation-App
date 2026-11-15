@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { api } from "@/lib/api";
 import { useT } from "@/lib/i18n/provider";
-import type { MapData, MapShelter } from "@/lib/types";
+import type { FailureMode, MapData, MapShelter } from "@/lib/types";
 
 function ShelterRow({ shelter, onChanged }: { shelter: MapShelter; onChanged: () => void }) {
   const t = useT();
@@ -66,6 +66,7 @@ export function SimulatorPanel({ map, onChanged }: { map: MapData; onChanged: ()
   const t = useT();
   const [busyRoad, setBusyRoad] = useState<string | null>(null);
   const [bursting, setBursting] = useState(false);
+  const [busyApi, setBusyApi] = useState(false);
 
   async function burst() {
     const n = map.nodes.length;
@@ -81,6 +82,19 @@ export function SimulatorPanel({ map, onChanged }: { map: MapData; onChanged: ()
       toast.error(t.simulator.error);
     } finally {
       setBursting(false);
+    }
+  }
+
+  async function setApi(mode: FailureMode) {
+    setBusyApi(true);
+    try {
+      await api.setProviderMode(mode);
+      toast.success(mode === "503" ? t.provider.toast503 : mode === "slow" ? t.provider.toastSlow : t.provider.toastRestore);
+      onChanged();
+    } catch {
+      toast.error(t.simulator.error);
+    } finally {
+      setBusyApi(false);
     }
   }
 
@@ -113,6 +127,20 @@ export function SimulatorPanel({ map, onChanged }: { map: MapData; onChanged: ()
             <Button variant="destructive" disabled={bursting} onClick={burst}>
               {t.simulator.burst}
             </Button>
+          </section>
+          <section className="flex flex-col gap-2">
+            <h3 className="font-semibold">{t.provider.simTitle}</h3>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="destructive" disabled={busyApi} onClick={() => setApi("503")}>
+                {t.provider.sim503}
+              </Button>
+              <Button variant="outline" disabled={busyApi} onClick={() => setApi("slow")}>
+                {t.provider.simSlow}
+              </Button>
+              <Button variant="outline" disabled={busyApi} onClick={() => setApi("off")}>
+                {t.provider.simRestore}
+              </Button>
+            </div>
           </section>
           <section className="flex flex-col gap-2">
             <h3 className="font-semibold">{t.simulator.shelters}</h3>

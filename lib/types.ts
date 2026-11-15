@@ -39,6 +39,18 @@ export type RouteResult = {
   /** true when the route was computed on accessible edges only (priority citizen) */
   accessible: boolean;
   reason: RouteReason | null;
+  /** "fallback" = external routing API is down; computed from cached/static data */
+  mode: RouteMode;
+  source: "live" | "cache" | "static";
+};
+export type RouteMode = "live" | "fallback";
+export type FailureMode = "off" | "503" | "slow";
+export type ProviderHealth = {
+  state: "closed" | "open" | "half_open";
+  source: "live" | "cache" | "static";
+  failures: number;
+  lastError: string | null;
+  lastOkAt: number | null;
 };
 export type TrafficEdge = {
   id: string;

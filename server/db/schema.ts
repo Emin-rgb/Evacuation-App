@@ -125,3 +125,10 @@ export const alertsRelations = relations(alerts, ({ one }) => ({
   zone: one(zones, { fields: [alerts.zoneId], references: [zones.id] }),
   shelter: one(shelters, { fields: [alerts.shelterId], references: [shelters.id] }),
 }));
+
+/** Tiny key/value store for simulator switches shared across serverless instances (Drop 2: traffic_failure_mode). */
+export const systemFlags = pgTable("system_flags", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});

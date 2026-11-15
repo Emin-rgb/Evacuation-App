@@ -34,3 +34,5 @@ export const sosBurstSchema = z.object({
   lng: z.number().min(-180).max(180),
   count: z.number().int().min(1).max(20),
 });
+
+export const providerModeSchema = z.object({ mode: z.enum(["off", "503", "slow"]) });

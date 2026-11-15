@@ -4,7 +4,7 @@ import { roadNodes, shelters } from "@/server/db/schema";
 import { haversineM, nearestNode, type LatLng } from "@/server/engine/geo";
 import { FULL_PCT, buildPath, buildSteps, pickShelter, shortestPaths } from "@/server/engine/routing";
 import { getCitizenRole } from "@/server/services/citizen.service";
-import { trafficProvider } from "@/server/providers/traffic.provider";
+import { remapStaticEdges, trafficProvider } from "@/server/providers/traffic.provider";
 import type { RouteReason, RouteResult } from "@/lib/types";
 
 const WALK_M_PER_MIN = 80;
@@ -15,11 +15,13 @@ export async function findRoute(origin: LatLng, req: RouteRequest = {}): Promise
   const { prevShelterId, citizenId, targetShelterId } = req;
   const accessibleOnly = citizenId ? (await getCitizenRole(citizenId)) === "priority" : false;
   const opts = { accessibleOnly };
-  const [nodes, edges, active] = await Promise.all([
+  const [nodes, traffic, active] = await Promise.all([
     db.select().from(roadNodes),
-    trafficProvider.getEdges(),
+    trafficProvider.getEdgesWithMeta(),
     db.select().from(shelters).where(eq(shelters.isActive, true)),
   ]);
+  // Drop 2: live → cached snapshot → static backup graph (never throws; static ids are remapped to DB node ids)
+  const edges = traffic.source === "static" ? remapStaticEdges(traffic.edges, nodes) : traffic.edges;
   const start = nearestNode(origin, nodes);
   if (!start) return null;
 
@@ -73,5 +75,7 @@ export async function findRoute(origin: LatLng, req: RouteRequest = {}): Promise
     rerouted: reason !== null,
     accessible: accessibleOnly,
     reason,
+    mode: traffic.source === "live" ? "live" : "fallback",
+    source: traffic.source,
   };
 }

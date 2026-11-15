@@ -349,6 +349,7 @@ The challenge announces changes during the event. Each one is recorded here with
 
 | Drop | Status          | Summary                                                                                                                                                                                                                |
 | ---- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2    | implemented     | External routing API outage: circuit breaker + timeout (5 s) with a live → cached snapshot → static backup graph fallback; citizens keep getting routes with an "Offline / backup routing mode" banner. Additive: with a healthy API the flow is identical. |
 | 1    | implemented     | Priority SOS role with accessible evacuation routes (Priority#1 on the dispatcher), and an AZ/EN language switch. Additive: new columns have defaults and `accessibleOnly` is off unless the citizen is `priority`, so standard routes are unchanged. |
 
 ### Drop 1: what changed
@@ -360,6 +361,24 @@ The challenge announces changes during the event. Each one is recorded here with
 - **i18n:** `lib/i18n/{az,en}.ts` (typed `Dictionary`, a missing key is a compile error), `LanguageProvider` + `useT()`, AZ/EN switch in the header, persisted in localStorage. Place and shelter names from the DB are data and stay as seeded; route reasons are sent as codes.
 - **Seed:** 6 of 31 roads and 2 of 10 shelters flagged non-accessible (graph stays connected), 3 priority citizens.
 - **Crisis rule unchanged:** a priority SOS counts as one normal signal.
+
+### Drop 2: what changed
+
+The external "map and routing API" (our `SimulatedTrafficProvider`) can now fail (HTTP 503 or >5 s) without any unhandled exception.
+
+```
+findRoute → trafficProvider.getEdgesWithMeta()
+              └─ CircuitBreaker (2 failures → open, 15 s cooldown, half-open probe) + 5 s timeout
+                    ├─ live      SimulatedTrafficProvider (road_edges)         → mode "live"
+                    ├─ cache     last good snapshot, TTL 10 min (keeps closures) → mode "fallback"
+                    └─ static    server/data/fallback-graph.ts (roads assumed open) → mode "fallback"
+```
+
+- **Engine (pure, tested in `tests/resilience.test.ts`):** `server/engine/circuit-breaker.ts`, `server/engine/resilient-edges.ts`.
+- **Static backup data:** `server/data/fallback-graph.ts` is also the seed's source of truth, so the backup graph cannot drift from the seeded one; its node keys are mapped to DB node ids by name at routing time.
+- **Schema (additive):** table `system_flags` (key `traffic_failure_mode` = `off|503|slow`) so the simulated outage is shared between serverless instances.
+- **API:** `GET /api/route` gains `mode` (`live|fallback`) and `source`; `GET /api/traffic/health`; `PATCH /api/simulate/provider {mode}`.
+- **UI:** amber offline banner and approximate distance/ETA (citizen), "Backup mode" map badge, provider chip and Routing-API buttons in the Simulator (dispatcher), "Service restored" toast. Strings in both AZ and EN.
 
 ---
 

@@ -68,11 +68,12 @@ The layered structure (UI → API route → service → engine/provider → DB),
 
 ### 3.6 Challenge drops
 
-No challenge drop has been implemented at the time of writing. Drop 1 (priority SOS role, accessible routing, AZ/EN) is planned in `PLAN.md` as additive work. When drops are implemented with AI assistance, the table below will be updated.
+Drops are planned in `PLAN.md` first (the agent drafts the task list and states whether the data model changes), then implemented one task at a time.
 
-| Drop       | Time | AI used for | Human decisions |
-| ---------- | ---- | ----------- | --------------- |
-| _none yet_ |      |             |                 |
+| Drop | AI used for | Human decisions |
+| ---- | ----------- | --------------- |
+| 1 | Priority role, accessible routing, AZ/EN i18n: schema, engine filter, UI, tests | Accessibility as flags on one graph (no second graph); crisis rule unchanged |
+| 2 | Circuit breaker, timeout, resilient provider, static fallback graph, outage simulator, UI banners, unit tests; verified by curl against a running server in 503 and slow modes | Fallback order (live, cache, static); one DB flag so the outage works across instances; no new dependency |
 
 ## 4. How we kept control (human in the loop)
 

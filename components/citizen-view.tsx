@@ -48,6 +48,7 @@ export function CitizenView() {
   const [targetId, setTargetId] = useState<string | null>(null);
   const [banner, setBanner] = useState<{ reason: RouteReason; from: string; to: string } | null>(null);
   const prevShelter = useRef<{ id: string; name: string } | null>(null);
+  const lastMode = useRef<"live" | "fallback" | null>(null);
 
   const loadMap = useCallback(() => {
     setMapError(false);
@@ -82,6 +83,7 @@ export function CitizenView() {
     if (!origin) return;
     let cancelled = false;
     prevShelter.current = null;
+    lastMode.current = null;
     setBanner(null);
     setRouteLoading(true);
     setRouteError(null);
@@ -103,6 +105,8 @@ export function CitizenView() {
             toast.info(t.citizen.targetUnavailable);
             setTargetId(null);
           }
+          if (lastMode.current === "fallback" && r.mode === "live") toast.success(t.provider.restored);
+          lastMode.current = r.mode;
           prevShelter.current = { id: r.shelter.id, name: r.shelter.name };
           setRoute(r);
           setUpdatedAt(Date.now());
@@ -175,6 +179,7 @@ export function CitizenView() {
           origin={origin}
           highlightShelterId={route?.shelter.id ?? top[0]?.id}
           updatedAt={updatedAt}
+          degraded={route?.mode === "fallback"}
           onShelterClick={(id) => setTargetId(id)}
           focus={route?.path}
           fitKey={route && origin ? `${origin.lat},${origin.lng}|${route.shelter.id}` : undefined}
@@ -235,6 +240,12 @@ export function CitizenView() {
                 </div>
               </div>
             )}
+            {route?.mode === "fallback" && (
+              <div role="status" className="mt-2 rounded-lg bg-amber-100 p-3 text-sm text-amber-900">
+                <div className="font-semibold">{t.provider.offlineTitle}</div>
+                <div>{t.provider.offlineHint}</div>
+              </div>
+            )}
             {routeLoading ? (
               <Skeleton className="mt-2 h-12 w-full" />
             ) : route ? (
@@ -243,8 +254,8 @@ export function CitizenView() {
                   {t.citizen.routeTarget}: {route.shelter.name}
                 </div>
                 <div className="text-muted-foreground">
-                  {t.citizen.routeDistance}: {formatDistance(route.distanceM)} · {t.citizen.routeEta}:{" "}
-                  {route.etaMin} {t.citizen.routeMin}
+                  {t.citizen.routeDistance}: {route.mode === "fallback" ? "~" : ""}{formatDistance(route.distanceM)} · {t.citizen.routeEta}:{" "}
+                  {route.mode === "fallback" ? "~" : ""}{route.etaMin} {t.citizen.routeMin}{route.mode === "fallback" ? ` (${t.provider.approx})` : ""}
                 </div>
                 {targetId && (
                   <Button variant="outline" size="sm" className="mt-2" onClick={() => setTargetId(null)}>
