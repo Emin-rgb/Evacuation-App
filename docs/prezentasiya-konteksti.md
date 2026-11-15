@@ -10,11 +10,11 @@
 Aşağıdakı kontekst əsasında 7 dəqiqəlik bir təqdimat hazırla (Azərbaycan dilində).
 Təqdimat Digital Azerbaijan Challenge finalında münsiflər qarşısındadır.
 İstəyirəm:
-1. 10-11 slayd: hər slayd üçün başlıq, ən çox 3-4 qısa bənd, (varsa) rəqəm və hansı şəkil/diaqram qoyulacağı.
+1. Pitch deck üslubunda 9 slayd + canlı demo bölməsi (bölmə 11.2-yə uyğun): hər slayd üçün başlıq, ən çox 3-4 qısa bənd, (varsa) rəqəm və hansı şəkil/diaqram qoyulacağı.
 2. Hər slayd üçün natiq mətni (sadə dildə, danışıq tərzində, 30-45 saniyə).
 3. Vizual təklif: rəng palitrası, şrift, ikon üslubu (fövqəladə hal mövzusuna uyğun, təmiz və peşəkar).
 4. Sonda münsiflərin verə biləcəyi 10 sual və qısa cavablar.
-Yalnız kontekstdəki faktlardan istifadə et, rəqəm və xüsusiyyət uydurma. Zəif tərəfləri dürüst göstər.
+Münsiflərin qiymətləndirmə meyarlarına (bölmə 11.1) və vaxt bölgüsünə əməl et. Yalnız kontekstdəki faktlardan istifadə et, rəqəm və xüsusiyyət uydurma. Zəif tərəfləri dürüst göstər.
 Təqdimat canlı demo ilə birləşəcək: demo slaydlarında "Burada canlı demo göstərilir" yaz və demo addımlarını qısa yaz.
 ```
 
@@ -150,21 +150,54 @@ Zod ilə hər girişin yoxlanması · parametrli SQL (injection yoxdur) · scryp
 
 **Demo üçün xəbərdarlıq:** yalnız **Nərimanov** rayonu və **Tbilisi yolu** (Yasamal və Xətai-də yol bağlamaq marşruta təsir etmir).
 
-## 11. Tövsiyə olunan slayd quruluşu (10–11 slayd)
+## 11. Pitch deck: münsiflər nə gözləyir və 7 dəqiqə necə bölünür
 
-| # | Slayd | Məzmun | Vizual |
-| - | ----- | ------ | ------ |
-| 1 | Başlıq | Layihə adı, "Digital Azerbaijan Challenge", komanda, canlı ünvan | Qalxan ikonu (tətbiqin loqosu), tünd mavi/qırmızı |
-| 2 | Problem | Vətəndaş görmür, dispetçer itir (2 sütun) | Sadə ikonlar |
-| 3 | Həll | 3 prinsip: eyni mənzərə, avtomatlaşdırma, bir klik | Üç kart |
-| 4 | Necə işləyir | 4 addım: yer seç → marşrut dəyişir → SOS yağır → bir klik | Tətbiqin "Necə işləyir" kartları |
-| 5 | **Canlı demo** | Demo addımları (bölmə 10) | Tətbiq ekran görüntüləri |
-| 6 | Qırmızı Həyəcan qaydası | 4 nəfər / 500 m / 5 dəq / 95% | Sadə sxem (xəritə + dairə) |
-| 7 | Challenge Drop-lar | Üç drop: nə dəyişdi, necə uyğunlaşdıq | Üç sütun |
-| 8 | Arxitektura | Qat diaqramı + texnologiyalar | Diaqram (bölmə 6) |
-| 9 | Təhlükəsizlik və etibarlılıq | Saxta SOS müdafiəsi, RBAC, circuit breaker | Funnel diaqramı |
-| 10 | Test və nəticələr | 68 test, 21 API yoxlaması, yük testi, gecikmə | Rəqəm kartları |
-| 11 | Dürüst məhdudiyyətlər və növbəti addım | Marşrut həndəsəsi, `on_scene` statusu, WebSocket; AI istifadəsi; təşəkkür | Yol xəritəsi |
+### 11.1. Münsiflər necə qiymətləndirir (case-dən) və vaxt buna uyğun bölünür
+
+| Meyar | Faiz | Münsiflər nə görmək istəyir | Təqdimatda ayrılan vaxt |
+| ----- | ---- | --------------------------- | ----------------------- |
+| Əsas funksionallığın düzgünlüyü | **30%** | Hər tələb canlı işləyir: məntəqələr + doluluq, marşrut, SOS, Təhlükəsizəm, avtomatik alternativ, dashboard, Qırmızı Həyəcan, bir klik | **~2,5 dəq (canlı demo)** |
+| Challenge drop-lara uyğunlaşma | **20%** | Üç dəyişikliyin hər biri işləyir və arxitektura onu necə rahat qəbul etdi | **~1,5 dəq** |
+| Arxitektura və kod keyfiyyəti | **15%** | Aydın qatlar, niyə belə, frontend/backend/DB/API adları | **~1 dəq** |
+| Test, etibarlılıq, dayanıqlılıq | **15%** | Testlər, xəta halları (API çökür, saxta SOS), sistem çökmür | **~0,75 dəq** |
+| AI-nin nəzarətli istifadəsi | **10%** | Hansı alət, harada, insan nəzarəti necə | **~0,4 dəq** |
+| Demo, komanda işi, texniki müdafiə | **10%** | Axıcı demo, rolların bölgüsü, suallara dürüst cavab | **bütün təqdimat + sual-cavab** |
+
+**Nəticə:** demo ən vacibdir (30% + 20% canlı göstərilir). Slaydlar yalnız onu dəstəkləməlidir, uzun mətn olmasın.
+
+### 11.2. Pitch deck: 9 slayd + canlı demo (cəmi 7:00)
+
+Qayda: **hər slaydda bir fikir**, ən çox 3–4 qısa bənd, mətn 30 sözdən az, rəqəm iri.
+
+| # | Vaxt | Slayd | Bir fikir (natiq deyir) | Vizual |
+| - | ---- | ----- | ----------------------- | ------ |
+| 1 | 0:00–0:25 | **Hook + başlıq** | "Zəlzələ olub. Min nəfər eyni yola çıxır. Sığınacaq doludur, yol bağlıdır. Kim bilir? Heç kim." (sonra layihə adı) | Böyük sual + qalxan loqosu |
+| 2 | 0:25–0:50 | **Problem** | Vətəndaş görmür (hansı sığınacaq dolu, hansı yol bağlı); dispetçer itir (yüzlərlə SOS) | İki sütun, 2 ikon |
+| 3 | 0:50–1:10 | **Həll** | Eyni canlı mənzərə · avtomatlaşdırma · bir klik | Üç kart |
+| 4 | 1:10–3:40 | **CANLI DEMO (əsas funksionallıq)** | Nərimanov → marşrut → yol bağlanır → marşrut dəyişir → SOS → Qırmızı Həyəcan → bir klik təsdiq | Tətbiq özü (slayd: "Demo") |
+| 5 | 3:40–5:10 | **Challenge drop-lar (demo davamı)** | Drop 1 xüsusi qayğı + dil · Drop 2 API çökür, sistem çökmür · Drop 3 saxta SOS axını + RBAC | Üç sütun; demo davam edir |
+| 6 | 5:10–6:10 | **Arxitektura** | Qatlar: Ekran → API → Servis → Mühərrik → DB. Yeni dəyişiklik köhnə kodu pozmur | Qat diaqramı + texnologiya adları |
+| 7 | 6:10–6:35 | **Etibarlılıq və test** | 68 test · 21 API yoxlaması · yük testi · circuit breaker · atomik təsdiq | 4 rəqəm kartı |
+| 8 | 6:35–6:50 | **AI və komanda** | Claude Code kod/test/sənəd, Gemini sənəd; qərar və yoxlama komandanın | Üç ikon + komanda |
+| 9 | 6:50–7:00 | **Dürüst zəiflik + növbəti addım + təşəkkür** | Marşrut həndəsəsi hələ sxematikdir; növbəti: real OSM yol şəbəkəsi | Yol xəritəsi, canlı ünvan, QR kod |
+
+> Demo slaydları (4, 5) əslində slayd deyil, canlı tətbiqdir. Slayddan tətbiqə keçmək üçün iki pəncərə əvvəlcədən açıq olsun. Slayd 4 və 5-də yalnız qısa "Demo" lövhəsi göstərin və tətbiqə keçin.
+
+### 11.3. Münsiflərin gözlədiyi "ağıllı" hərəkətlər
+
+- **Əvvəlcə nəticə, sonra izah:** əvvəl göstərin, sonra "bunu necə etdik" deyin.
+- **Hər tələbi ad çəkərək göstərin** ("indi case-dəki 'avtomatik alternativ marşrut' tələbini göstərirəm"). Münsiflər siyahını yoxlayır.
+- **Drop-ları ayrıca elan edin** ("Drop 1, Drop 2, Drop 3") ki, 20%-lik hissəni asan tapsınlar.
+- **Texniki müdafiə:** hər qərar üçün bir cümləlik "niyə" hazır olsun (bölmə 14).
+- **Dürüstlük:** zəif tərəfi özünüz deyin (bölmə 13). Gizlədilən problemi münsiflər tapanda etibar itir, özünüz deyəndə gücə çevrilir.
+- **Komanda işi:** 3 nəfər bölüşün: biri danışır, biri sol (vətəndaş), biri sağ (dispetçer) pəncərədə basır. Sonda hər kəs bir suala cavab versin.
+- **Zaman:** 7 dəqiqəni keçməyin; demo uzanarsa Drop 3-ün yük testini qısa tutun, amma Drop 2 və RBAC-ı atmayın.
+
+### 11.4. Başlanğıc üçün hazır "hook" variantları (birini seçin)
+
+1. *"Zəlzələdən 5 dəqiqə sonra siz telefonunuzu açırsınız. Ən yaxın sığınacaq hansıdır? Dolu deyil ki? Yol açıqdır?"*
+2. *"Dispetçerin ekranında 500 SOS yanır. Hansı həqiqidir? Hansına briqada göndərməli?"*
+3. *"Fövqəladə halda ən böyük düşmən yalnız fəlakət deyil, məlumatsızlıqdır."*
 
 ## 12. AI istifadəsi (slayda qısa qeyd)
 
