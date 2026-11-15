@@ -62,11 +62,11 @@ Each task ends with a **✅ Browser check**. Do them in order; tick them off whe
   - [x] 2.5 First vertical slice: `zone.service.ts` + `GET /api/zones`
   - ✅ `/api/zones` in the browser returns 6 zones; `db:studio` shows seeded rows
 
-- [ ] **3. City map (SVG)**
-  - [ ] 3.1 `GET /api/map` → nodes, edges (with status), active shelters
-  - [ ] 3.2 `components/city-map.tsx`: projects lat/lng into a viewBox, draws roads, closed roads in red, shelters coloured by occupancy (green <70, amber <90, red ≥90)
-  - [ ] 3.3 Props for overlays: `route?`, `sos?`, `highlightShelterId?`
-  - [ ] 3.4 Render on `/citizen` with skeleton + error state
+- [x] **3. City map (SVG)**
+  - [x] 3.1 `GET /api/map` → nodes, edges (with status), active shelters
+  - [x] 3.2 `components/city-map.tsx`: projects lat/lng into a viewBox, draws roads, closed roads in red, shelters coloured by occupancy (green <70, amber <90, red ≥90)
+  - [x] 3.3 Props for overlays: `route?`, `sos?`, `highlightShelterId?`
+  - [x] 3.4 Render on `/citizen` with skeleton + error state
   - ✅ `/citizen` shows the Baku road schematic with coloured shelter markers
 
 - [ ] **4. Nearest shelters (citizen)**

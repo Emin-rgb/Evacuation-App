@@ -29,6 +29,11 @@ export const t = {
     sos: "SOS",
     safe: "Təhlükəsizəm",
   },
+  map: {
+    error: "Xəritə yüklənmədi.",
+    retry: "Yenidən cəhd et",
+    empty: "Xəritə məlumatı yoxdur.",
+  },
   dispatcher: {
     title: "Dispetçer paneli",
     subtitle: "Canlı SOS, məntəqə və briqada vəziyyəti.",

@@ -1,3 +1,4 @@
+import { CitizenMap } from "@/components/citizen-map";
 import { Skeleton } from "@/components/ui/skeleton";
 import { t } from "@/lib/i18n";
 
@@ -9,7 +10,7 @@ export default function CitizenPage() {
         <p className="text-muted-foreground">{t.citizen.subtitle}</p>
       </div>
       <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
-        <Skeleton className="h-80 w-full rounded-xl lg:h-[28rem]" />
+        <CitizenMap />
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
             <span className="text-sm font-medium">{t.citizen.district}</span>
