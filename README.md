@@ -157,6 +157,7 @@ Brauzerdə <http://localhost:3000> açın. Ən yaxşı demo üçün iki pəncər
 | `npm run db:seed` | Demo məlumatını sıfırlayıb yükləyir, simulyator açarlarını söndürür, hesabları silmir |
 | `npm run db:studio` | Drizzle Studio ilə cədvəllərə baxış |
 | `SPREAD=1 npx tsx scripts/load-sos.ts <url> 600 50` | SOS flood yük testi (orta gecikməni ölçür) |
+| `npx tsx scripts/smoke-test.ts <url>` | API smoke test: case funksiyaları və 3 drop (21 yoxlama); sonra `npm run db:seed` |
 
 > **Diqqət:** lokal və canlı mühit **eyni verilənlər bazasından** istifadə edirsə, `db:seed` hər ikisinin demo vəziyyətini sıfırlayır.
 
@@ -293,13 +294,13 @@ Aşağıdakılar hazırkı vəziyyətin dürüst siyahısıdır. Hər birinin pl
 | 8 | SOS-un `resolved` və briqadanın `on_scene` statusunu dəyişən endpoint/UI yoxdur (briqada `en_route`-da qalır) |
 | 9 | Dispetçer paneli yalnız **açıq** həyəcanları göstərir (emal olunmuş həyəcan tarixçəsi yoxdur) |
 | 10 | Case-də "eyni zona **və ya** 500 m radius" deyilir; yalnız 500 m radius qaydası həyata keçirilib |
-| 11 | Real GPS Bakı sərhədindən (40.2–40.6 N, 49.5–50.2 E) kənardadırsa SOS `400` qaytarır |
+| 11 | ~~GPS Bakı sərhədindən kənardadırsa SOS 400~~ **Düzəldildi:** belə hallarda rayon mərkəzi istifadə olunur |
 | 12 | Rate limiter instansiya başınadır (paylaşılmır); istehsalda Upstash/Redis tövsiyə olunur |
 | 13 | Hesablar seed ilə yaradılır: qeydiyyat, parol sıfırlama, MFA, token ləğvi yoxdur |
 | 14 | Canlı yenilənmə 3 san polling ilə (WebSocket yoxdur); vətəndaş xəritəsi 6 san-də bir yenilənir |
-| 15 | Yalnız mühərrik unit-test olunub; API/UI inteqrasiya testləri avtomatlaşdırılmayıb (skriptlər əllə işlədilib) |
-| 16 | Brauzerdə mobil görünüş, konsol xətaları və bütün yükləmə/boş/xəta hallarının son əl yoxlaması tamamlanmayıb |
-| 17 | AZ/EN seçimi səbəbindən konsolda "hydration mismatch" xəbərdarlıqları ola bilər (funksionallığı pozmur) |
+| 15 | Mühərrik unit-test olunub (68 test); API üçün `scripts/smoke-test.ts` (21 yoxlama, işləyən serverə qarşı) əlavə olunub; UI testləri avtomatlaşdırılmayıb |
+| 16 | Brauzer yoxlaması qismən aparılıb (`/citizen` yüklənir, xəritə var, NaN/undefined yoxdur); dispetçer giriş formasının UI-də, mobil görünüşün və bütün boş/xəta hallarının son əl yoxlaması tamamlanmayıb |
+| 17 | Konsolda "hydration mismatch" xəbərdarlığı brauzer **əlavəsinin** (`data-landmark-index` atributu) səbəbindən çıxır, kodumuzdan deyil |
 | 18 | `npm run build` zamanı DB-yə prerender cəhdi qeyri-kritik `Failed query` log-ları yaradır (build uğurludur) |
 | 19 | "Xarici marşrut API-si" simulyasiyadır (real OSRM/Google yoxdur); məntəqə tutumları OSM-də olmadığı üçün **təxminidir**; briqada adları və doluluq uydurmadır |
 | 20 | Swagger UI CDN-dən yüklənir (internet lazımdır); Docker faylı yoxdur |

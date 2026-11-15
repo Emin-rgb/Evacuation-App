@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
+import { BAKU_BOUNDS } from "@/lib/schemas";
 import { useT } from "@/lib/i18n/provider";
 import type { MapData, NearestShelter, RouteReason, RouteResult, Zone } from "@/lib/types";
 import { useCitizen } from "@/lib/use-citizen";
@@ -168,8 +169,13 @@ export function CitizenView() {
     setLocationNote(false);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
+        const { latitude: lat, longitude: lng } = pos.coords;
+        // Outside the supported Baku area the SOS endpoint would reject the point: use the district centre instead.
+        if (lat < BAKU_BOUNDS.minLat || lat > BAKU_BOUNDS.maxLat || lng < BAKU_BOUNDS.minLng || lng > BAKU_BOUNDS.maxLng) {
+          return fallback();
+        }
         setLocating(false);
-        setOrigin({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setOrigin({ lat, lng });
       },
       fallback,
       { timeout: 6000 },
