@@ -1,7 +1,7 @@
 "use client";
 
 import { DemoGuide } from "@/components/demo-guide";
-import { DispatcherView } from "@/components/dispatcher-view";
+import { DispatcherGate } from "@/components/dispatcher-gate";
 import { useT } from "@/lib/i18n/provider";
 
 export default function DispatcherPage() {
@@ -13,7 +13,7 @@ export default function DispatcherPage() {
         <p className="text-muted-foreground">{t.dispatcher.subtitle}</p>
       </div>
       <DemoGuide screen="dispatcher" />
-      <DispatcherView />
+      <DispatcherGate />
     </main>
   );
 }

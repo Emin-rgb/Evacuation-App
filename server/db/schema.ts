@@ -83,7 +83,11 @@ export const sosSignals = pgTable(
     priority: integer("priority").notNull().default(0),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
-  (t) => [index("sos_created_at_idx").on(t.createdAt), index("sos_zone_idx").on(t.zoneId)],
+  (t) => [
+    index("sos_created_at_idx").on(t.createdAt),
+    index("sos_zone_idx").on(t.zoneId),
+    index("sos_citizen_created_idx").on(t.citizenId, t.createdAt),
+  ],
 );
 
 export const alerts = pgTable("alerts", {

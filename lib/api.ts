@@ -1,11 +1,22 @@
 import type { RiskSimulation, RiskSnapshot, CitizenRole, FailureMode, ProviderHealth, SosType, DashboardData, MapData, NearestShelter, RoadStatus, RouteResult, TrafficEdge, Zone } from "@/lib/types";
 
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public status: number,
+  ) {
+    super(message);
+  }
+}
+
+async function fail(res: Response): Promise<never> {
+  const body = await res.json().catch(() => null);
+  throw new ApiError(body?.error ?? `Request failed (${res.status})`, res.status);
+}
+
 async function get<T>(url: string): Promise<T> {
   const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) {
-    const body = await res.json().catch(() => null);
-    throw new Error(body?.error ?? `Request failed (${res.status})`);
-  }
+  if (!res.ok) return fail(res);
   return res.json() as Promise<T>;
 }
 
@@ -15,10 +26,7 @@ async function post<T>(url: string, body: unknown): Promise<T> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  if (!res.ok) {
-    const err = await res.json().catch(() => null);
-    throw new Error(err?.error ?? `Request failed (${res.status})`);
-  }
+  if (!res.ok) return fail(res);
   return res.json() as Promise<T>;
 }
 
@@ -28,14 +36,16 @@ async function patch<T>(url: string, body: unknown): Promise<T> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  if (!res.ok) {
-    const err = await res.json().catch(() => null);
-    throw new Error(err?.error ?? `Request failed (${res.status})`);
-  }
+  if (!res.ok) return fail(res);
   return res.json() as Promise<T>;
 }
 
+export type SessionRole = "viewer" | "dispatcher";
+
 export const api = {
+  login: (pin: string) => post<{ role: SessionRole }>("/api/auth/login", { pin }),
+  logout: () => post<{ ok: true }>("/api/auth/logout", {}),
+  getSession: () => get<{ role: SessionRole | null }>("/api/auth/me"),
   getMap: () => get<MapData>("/api/map"),
   getZones: () => get<Zone[]>("/api/zones"),
   getNearestShelters: (lat: number, lng: number) =>

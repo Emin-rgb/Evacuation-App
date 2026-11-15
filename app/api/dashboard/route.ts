@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
+import { guard } from "@/server/auth";
 import { getDashboard } from "@/server/services/dashboard.service";
 
-export async function GET() {
+export async function GET(req: Request) {
+  const denied = guard(req, "dashboard.read");
+  if (denied) return denied;
   try {
     return NextResponse.json(await getDashboard());
   } catch (err) {

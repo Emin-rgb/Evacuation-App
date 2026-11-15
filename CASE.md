@@ -61,3 +61,7 @@ Sistemə "Hərəkət Məhdudiyyətli Şəxs/ Xüsusi Qayğıya Ehtiyacı Olan V�
 Vətəndaş modulunun istifadə etdiyi Xarici Xəritə və Marşurutlaşdırma API- sı sıradan çıxmışdır (HTTP 503 Service Unavailable xətası qaytarır və ya cavab müddəti 5 saniyəni keçir).
 
 Sistem bu xəta zamanı çökməməli (unhandled excption verməməli), Circuit Braker / Fallback mxanizmi avtomatik işə düşməli və məsafə / marşrut hesablamalarını lokal ehtiyyat məlumat bazasından (statik koordinat matrisi və ya son keşlənmiş marşurutlar.0 icra edərək istifadəçiyə "Oflayn / Ehtiyat marşrut rejimində işləyir" bildirişi ilə xidmət göstərməyə davam etdirməlidir.
+
+### Challenge Drop 3
+
+Böhran zamanı panika və ya bot hücumu nəticəsində sistemə eyni anda 500-dən çox SAXTA SOS sorğusu (SOS Flood / SOS Attack) göndərilməsi ssenarisi aktivləşmişdir. Komanda SOS endpointlərini Rate Limiting və duplikat filtrasiyası ilə qorumalı (saxta sorğuların dispetçer panelini bloklamasının qarşısını almalı), dispetçer panelinin kritik əməliyyatlarını (xilasetmə briqadasının yönləndirilməsi) JWT / Rol-Based Access Control (RBAC) ilə təhlükəsizləşdirilməsi və kütləvi sorğular zamanı sistemin orta cavab müddətinin (latency) 300 ms-dən aşağı qalmasını təmin etməlidir.

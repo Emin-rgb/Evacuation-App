@@ -258,14 +258,16 @@ The app is a demo MVP with an intentionally small attack surface, but we applied
 | Data minimisation  | Citizens are anonymous UUIDs. No name, phone, email or device identifier is collected. Location is stored only when the citizen sends an SOS or chooses to share it.                                                                                                   |
 | Safe state changes | Approve/dismiss only act on alerts in `open` state (`409` otherwise), preventing double-dispatch; occupancy is clamped to capacity; the burst endpoint is capped at 20.                                                                                                |
 | Integrity          | Foreign keys, enums and `NOT NULL` constraints in the database back up the application checks. Approval is one atomic transaction.                                                                                                                                     |
+| Flood protection (Drop 3) | `POST /api/sos`: per-IP (20/min) and per-citizen (3/min) rate limit before any DB work, Baku coordinate bounds, duplicate filter (unresolved SOS < 5 min), distinct-citizen Red Alert rule, coalesced detection after the response, capped dashboard feed. |
+| Access control (Drop 3) | PIN login → HS256 JWT (`node:crypto`) in an httpOnly SameSite=Lax cookie; `viewer` / `dispatcher` roles; approve, dismiss, simulator and road/shelter writes need `dispatcher`; login limited to 5 attempts/min/IP; PIN compared in constant time; production fails closed (503) if secrets are unset. |
 | Dependencies       | Minimal dependency set; versions pinned by `package-lock.json`. No new packages were added beyond the approved stack.                                                                                                                                                  |
 
 **Known gaps (accepted for the demo, planned for production)**
 
-- **No authentication or authorisation.** Anyone can open `/dispatcher` and call the simulator and approve endpoints. Production needs dispatcher login (or at minimum a PIN enforced in Next.js `proxy.ts`), and the simulator endpoints disabled or protected by role.
-- **No rate limiting** on `POST /api/sos` or the burst endpoint. A malicious client could flood SOS and trigger false alerts.
+- **Dispatcher auth is PIN-based (Drop 3), not user accounts.** Two shared PINs map to two roles. Production needs named accounts, hashed credentials and an audit trail.
+- **Rate limiter is per serverless instance** (in memory). A distributed attacker can exceed the nominal limit across instances; the duplicate filter, Baku bounds and distinct-citizen detector still apply. Production: shared store (Upstash/Redis) or edge rate limiting.
 - **Citizen identity is self-asserted.** The UUID in `localStorage` is not proof of identity; it only needs to prove "distinct person" for the cluster rule. Production would need device attestation or phone verification to resist fake distinct citizens.
-- **No CSRF protection** beyond same-origin behaviour of the browser, acceptable while there are no cookies/sessions; it must be added with auth.
+- **CSRF:** the session cookie is `SameSite=Lax` and all state changes are JSON `POST`/`PATCH`, so cross-site forms cannot send it; add a CSRF token if cookies are ever relaxed.
 - **No audit log** of dispatcher approvals.
 
 ---
@@ -351,7 +353,7 @@ The app is a demo MVP with an intentionally small attack surface, but we applied
 - Shelter occupancy is set by the simulator, not measured. A real deployment needs check-in counts or sensors.
 - Detection and approval are not guarded against two concurrent writers (see the partial unique index suggestion above).
 - Team assignment is "available team in the zone, else any"; it does not optimise by distance or by SOS type.
-- No authentication, rate limiting or audit trail (section 8).
+- PIN-based roles only, per-instance rate limiting, no audit trail (section 8).
 - Only the engine is unit-tested; there are no automated integration or UI tests.
 
 ---

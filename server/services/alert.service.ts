@@ -1,11 +1,12 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, gte, inArray } from "drizzle-orm";
 import { db } from "@/server/db";
 import { alerts, rescueTeams, shelters, sosSignals } from "@/server/db/schema";
-import { detectAlerts } from "@/server/engine/crisis";
+import { CLUSTER_WINDOW_MS, detectAlerts } from "@/server/engine/crisis";
 
 export async function runDetection() {
   const [sos, shelterRows, open] = await Promise.all([
-    db.select().from(sosSignals),
+    // Detector only looks at the last 5 min, so never load older rows (keeps this O(recent), not O(all)).
+    db.select().from(sosSignals).where(gte(sosSignals.createdAt, new Date(Date.now() - CLUSTER_WINDOW_MS))),
     db.select().from(shelters),
     db.select().from(alerts).where(eq(alerts.status, "open")),
   ]);
@@ -16,6 +17,31 @@ export async function runDetection() {
   });
   if (found.length > 0) await db.insert(alerts).values(found);
   return found.length;
+}
+
+let detecting = false;
+let rerun = false;
+
+/**
+ * Single-flight detection for the SOS hot path: overlapping calls collapse into one extra run,
+ * so a flood costs at most one detection at a time and concurrent runs cannot double-insert alerts.
+ */
+export async function runDetectionCoalesced() {
+  if (detecting) {
+    rerun = true;
+    return;
+  }
+  detecting = true;
+  try {
+    do {
+      rerun = false;
+      await runDetection();
+    } while (rerun);
+  } catch (err) {
+    console.error("detection failed", err);
+  } finally {
+    detecting = false;
+  }
 }
 
 export type ApproveResult = {

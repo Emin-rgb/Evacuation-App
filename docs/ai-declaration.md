@@ -35,6 +35,8 @@ Taken from the git history (local commit times, 4-hour build window). Each task 
 | 12:29 | `test(engine): unit tests for routing, geo and crisis detection`       | Task 13: 31 unit tests                                    |
 | later | Documentation (task 14)                                                | README and `docs/*` drafted by the agent                  |
 
+| later | Challenge Drop 3 (task 15.3)                                           | Rate limit, duplicate filter, JWT/RBAC, load script, tests; agent-written, load test run and results checked by the team |
+
 Task 7 (deployment to Vercel) is performed by the team in the Vercel dashboard and is not an AI contribution.
 
 ## 3. How AI was used, by area

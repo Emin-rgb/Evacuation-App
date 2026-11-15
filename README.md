@@ -68,6 +68,9 @@ Open <http://localhost:3000>. Use two browser windows side by side: `/citizen` (
 | ----------------------- | -------- | ------------------------------------------------------------------ |
 | `DATABASE_URL`          | yes      | Postgres connection string used by the app, `drizzle-kit` and seed |
 | `DATABASE_URL_UNPOOLED` | no       | Direct (non-pooled) connection, listed in `.env.example`           |
+| `JWT_SECRET`            | prod     | HMAC secret for dispatcher session tokens (dev falls back to a fixed dev value) |
+| `DISPATCHER_PIN`        | prod     | PIN for the `dispatcher` role (dev default `2222`)                 |
+| `VIEWER_PIN`            | prod     | PIN for the read-only `viewer` role (dev default `1111`)           |
 | `GEMINI_API_KEY`        | no       | Not used: the product has no AI/LLM feature                        |
 
 ### Scripts
@@ -271,7 +274,7 @@ Picks an available team (same zone preferred, otherwise any) and a reserve inact
 
 ## API reference
 
-All endpoints return JSON. Errors have one shape: `{ "error": "message" }` with status `400` (validation), `404` (not found), `409` (alert already handled) or `500`. Every input is validated with Zod (`lib/schemas.ts`).
+All endpoints return JSON. Errors have one shape: `{ "error": "message" }` with status `400` (validation), `401` (no session), `403` (wrong role), `404` (not found), `409` (alert already handled), `429` (rate limit) or `500`. Approve/dismiss, all `/api/simulate/*`, road and shelter PATCH require the `dispatcher` role. Every input is validated with Zod (`lib/schemas.ts`).
 
 | Method | Path                      | Input                                          | Returns                                                             |
 | ------ | ------------------------- | ---------------------------------------------- | ------------------------------------------------------------------- |
@@ -280,10 +283,13 @@ All endpoints return JSON. Errors have one shape: `{ "error": "message" }` with 
 | GET    | `/api/shelters/nearest`   | `lat`, `lng`                                   | Active shelters sorted by distance, with `occupancyPct`             |
 | GET    | `/api/route`              | `lat`, `lng`, `prev?` (shelter uuid)           | `{ shelter, path, distanceM, etaMin, rerouted, reason }` or 404     |
 | GET    | `/api/traffic`            |                                                | Road edges from the traffic provider                                |
-| GET    | `/api/dashboard`          |                                                | KPIs, shelters, teams, SOS (last 60 min), open alerts, closed roads |
+| GET    | `/api/dashboard`          |                                                | **viewer+.** KPIs, shelters, teams, latest 100 SOS (60 min), open alerts, closed roads |
 | POST   | `/api/citizens`           | `{ lat?, lng? }`                               | `201 { id, status }`                                                |
 | PATCH  | `/api/citizens/:id`       | `{ status: "safe" }`                           | `{ id, status }`                                                    |
-| POST   | `/api/sos`                | `{ citizenId, type, lat, lng }`                | `201 { id, type, status }`; citizen becomes `sos`                   |
+| POST   | `/api/sos`                | `{ citizenId, type, lat, lng }` (Baku area)    | `201 { id, type, status }`; `200 { …, duplicate: true }` for a repeat; `429` when rate-limited |
+| POST   | `/api/auth/login`         | `{ pin }`                                      | `{ role }` + httpOnly session cookie; `401` wrong PIN, `429` too many attempts |
+| POST   | `/api/auth/logout`        |                                                | Clears the session cookie                                           |
+| GET    | `/api/auth/me`            |                                                | `{ role: "viewer" \| "dispatcher" \| null }`                        |
 | POST   | `/api/alerts/:id/approve` |                                                | `{ id, status, team, shelter, assignedSos }`                        |
 | POST   | `/api/alerts/:id/dismiss` |                                                | `{ id, status: "dismissed" }`                                       |
 | PATCH  | `/api/traffic/roads/:id`  | `{ status: "open" \| "closed" }`               | Updated road (simulator)                                            |
@@ -383,6 +389,28 @@ findRoute → trafficProvider.getEdgesWithMeta()
 - **Schema (additive):** table `system_flags` (key `traffic_failure_mode` = `off|503|slow`) so the simulated outage is shared between serverless instances.
 - **API:** `GET /api/route` gains `mode` (`live|fallback`) and `source`; `GET /api/traffic/health`; `PATCH /api/simulate/provider {mode}`.
 - **UI:** amber offline banner and approximate distance/ETA (citizen), "Backup mode" map badge, provider chip and Routing-API buttons in the Simulator (dispatcher), "Service restored" toast. Strings in both AZ and EN.
+
+### Drop 3: what changed
+
+Scenario: 500+ fake SOS (panic or bot attack) must not block the dispatcher panel, critical actions must be protected, and latency must stay under 300 ms.
+
+```
+POST /api/sos ─▶ per-IP limit (20/min) ─▶ Zod (Baku bounds) ─▶ per-citizen limit (3/min)
+              ─▶ duplicate filter (same citizen, unresolved SOS < 5 min → 200 duplicate)
+              ─▶ insert ─▶ response ─▶ after(): coalesced Red Alert detection
+```
+
+- **Rate limit + duplicate filter:** `server/engine/rate-limit.ts`, `server/engine/sos-guard.ts` (pure, tested). Rejected requests never reach the DB. The detector counts *distinct citizens*, so repeats cannot fake a Red Alert. Limiter is in memory per serverless instance (trade-off; a shared store such as Upstash is the production step).
+- **RBAC:** PIN login → HS256 JWT (`server/engine/jwt.ts`, `node:crypto`, no new dependency) in an httpOnly, SameSite=Lax cookie (8 h). Roles: `viewer` (read dashboard) and `dispatcher` (also approve/dismiss, simulator, road/shelter writes). Login attempts are limited to 5/min per IP. Citizen endpoints stay open.
+
+| Action                              | No session | viewer | dispatcher |
+| ----------------------------------- | ---------- | ------ | ---------- |
+| Citizen: shelters, route, SOS, safe | yes        | yes    | yes        |
+| `GET /api/dashboard`                | 401        | yes    | yes        |
+| Approve / dismiss alert, simulator, road/shelter PATCH | 401 | 403 | yes |
+
+- **Latency:** the SOS write is 2 DB round trips (citizen + recent SOS + zone in parallel, then insert + citizen update in parallel); detection reads only the last 5 min and runs after the response, single-flight. Dashboard SOS feed is capped at 100 (KPI counts stay exact via `count()`). Index `sos_signals(citizen_id, created_at)`.
+- **Load test:** `[SPREAD=1] npx tsx scripts/load-sos.ts <baseUrl> 600 50` (SPREAD rotates client IPs to simulate a botnet). Result on a dev machine against remote Neon: 600 requests → ~450 × 429, ~40-55 × 200 duplicate, ~35-55 × 201, 60 × 400 (out of bounds); mean latency 99-140 ms (single IP: ~100 ms); citizen read during the flood ~90 ms; no fake Red Alert.
 
 ---
 

@@ -23,12 +23,15 @@ export const citizenCreateSchema = z.object({
 export const citizenPatchSchema = z
   .object({ status: z.literal("safe").optional(), role: z.enum(["standard", "priority"]).optional() })
   .refine((v) => v.status !== undefined || v.role !== undefined);
+// Baku area (generous): rejects obviously fake coordinates before they touch the DB.
+export const BAKU_BOUNDS = { minLat: 40.2, maxLat: 40.6, minLng: 49.5, maxLng: 50.2 };
 export const sosCreateSchema = z.object({
   citizenId: z.string().uuid(),
   type: z.enum(["fire", "collapse", "flood", "medical"]),
-  lat: z.number().min(-90).max(90),
-  lng: z.number().min(-180).max(180),
+  lat: z.number().min(BAKU_BOUNDS.minLat).max(BAKU_BOUNDS.maxLat),
+  lng: z.number().min(BAKU_BOUNDS.minLng).max(BAKU_BOUNDS.maxLng),
 });
+export const loginSchema = z.object({ pin: z.string().min(1).max(64) });
 export const sosBurstSchema = z.object({
   lat: z.number().min(-90).max(90),
   lng: z.number().min(-180).max(180),

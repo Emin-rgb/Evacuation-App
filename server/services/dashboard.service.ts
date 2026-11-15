@@ -1,14 +1,16 @@
-import { desc, eq, gte } from "drizzle-orm";
+import { and, count, desc, eq, gt, gte, ne } from "drizzle-orm";
 import { db } from "@/server/db";
 import { alerts, citizens, rescueTeams, roadEdges, shelters, sosSignals, zones } from "@/server/db/schema";
 import type { DashboardData } from "@/lib/types";
 
 const SOS_WINDOW_MS = 60 * 60 * 1000;
 const CRITICAL_PCT = 90;
+const SOS_FEED_LIMIT = 100; // flood protection: the feed and map never carry more than this
 
 export async function getDashboard(): Promise<DashboardData> {
   const since = new Date(Date.now() - SOS_WINDOW_MS);
-  const [shelterRows, teamRows, sosRows, alertRows, closed, safe] = await Promise.all([
+  const active = and(gte(sosSignals.createdAt, since), ne(sosSignals.status, "resolved"));
+  const [shelterRows, teamRows, sosRows, alertRows, closed, safe, [activeCount], [priorityCount]] = await Promise.all([
     db
       .select({ s: shelters, zoneName: zones.name })
       .from(shelters)
@@ -24,7 +26,8 @@ export async function getDashboard(): Promise<DashboardData> {
       .from(sosSignals)
       .innerJoin(zones, eq(sosSignals.zoneId, zones.id))
       .where(gte(sosSignals.createdAt, since))
-      .orderBy(desc(sosSignals.priority), desc(sosSignals.createdAt)),
+      .orderBy(desc(sosSignals.priority), desc(sosSignals.createdAt))
+      .limit(SOS_FEED_LIMIT),
     db
       .select({ a: alerts, zoneName: zones.name })
       .from(alerts)
@@ -33,6 +36,8 @@ export async function getDashboard(): Promise<DashboardData> {
       .orderBy(desc(alerts.createdAt)),
     db.select({ id: roadEdges.id, name: roadEdges.name }).from(roadEdges).where(eq(roadEdges.status, "closed")),
     db.select({ id: citizens.id }).from(citizens).where(eq(citizens.status, "safe")),
+    db.select({ n: count() }).from(sosSignals).where(active),
+    db.select({ n: count() }).from(sosSignals).where(and(active, gt(sosSignals.priority, 0))),
   ]);
 
   const shelterList = shelterRows
@@ -52,8 +57,8 @@ export async function getDashboard(): Promise<DashboardData> {
 
   return {
     stats: {
-      activeSos: sosRows.filter(({ s }) => s.status !== "resolved").length,
-      prioritySos: sosRows.filter(({ s }) => s.status !== "resolved" && s.priority > 0).length,
+      activeSos: activeCount.n,
+      prioritySos: priorityCount.n,
       safeCitizens: safe.length,
       criticalShelters: shelterList.filter((s) => s.occupancyPct >= CRITICAL_PCT).length,
       availableTeams: teamRows.filter(({ t }) => t.status === "available").length,

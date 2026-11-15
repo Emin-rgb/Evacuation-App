@@ -27,7 +27,7 @@ import {
   UserGroup03Icon,
 } from "@hugeicons/core-free-icons";
 import { SOS_ICON, SOS_SWATCH } from "@/lib/map-icons";
-import { api } from "@/lib/api";
+import { ApiError, api, type SessionRole } from "@/lib/api";
 import { useT } from "@/lib/i18n/provider";
 import type { DashboardData, FailureMode, MapData, ProviderHealth, TeamStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -58,7 +58,8 @@ function Empty({ children }: { children: string }) {
   );
 }
 
-export function DispatcherView() {
+export function DispatcherView({ role, onUnauthorized }: { role: SessionRole; onUnauthorized: () => void }) {
+  const canDispatch = role === "dispatcher";
   const t = useT();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [data, setData] = useState<DashboardData | null>(null);
@@ -82,8 +83,11 @@ export function DispatcherView() {
         setUpdatedAt(Date.now());
         setError(false);
       })
-      .catch(() => setError(true));
-  }, []);
+      .catch((err) => {
+        if (err instanceof ApiError && err.status === 401) onUnauthorized();
+        else setError(true);
+      });
+  }, [onUnauthorized]);
 
   useEffect(() => {
     load();
@@ -109,8 +113,10 @@ export function DispatcherView() {
         toast.success(t.dispatcher.dismissToast);
       }
       load();
-    } catch {
-      toast.error(t.dispatcher.actionError);
+    } catch (err) {
+      const status = err instanceof ApiError ? err.status : 0;
+      if (status === 401) onUnauthorized();
+      else toast.error(status === 403 ? t.auth.forbidden : t.dispatcher.actionError);
     } finally {
       setBusyId(null);
     }
@@ -234,7 +240,7 @@ export function DispatcherView() {
         <span className="text-muted-foreground mr-auto hidden text-xs md:inline">
           {t.dispatcher.simulatorHelp}
         </span>
-        <SimulatorPanel map={map} onChanged={load} />
+        {canDispatch && <SimulatorPanel map={map} onChanged={load} />}
       </div>
       <RiskBanner variant="dispatcher" />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -297,16 +303,17 @@ export function DispatcherView() {
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Button disabled={busyId === a.id} onClick={() => handleAlert(a.id, "approve")}>
+                <Button disabled={!canDispatch || busyId === a.id} onClick={() => handleAlert(a.id, "approve")}>
                   {busyId === a.id ? "…" : t.dispatcher.approve}
                 </Button>
                 <Button
                   variant="outline"
-                  disabled={busyId === a.id}
+                  disabled={!canDispatch || busyId === a.id}
                   onClick={() => handleAlert(a.id, "dismiss")}
                 >
                   {t.dispatcher.dismiss}
                 </Button>
+                {!canDispatch && <p className="text-muted-foreground self-center text-xs">{t.auth.forbidden}</p>}
               </div>
             </div>
           ))
