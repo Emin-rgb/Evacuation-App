@@ -54,12 +54,12 @@ Each task ends with a **✅ Browser check**. Do them in order; tick them off whe
   - [x] 1.4 `/citizen` and `/dispatcher` placeholder pages with skeleton blocks in the final layout
   - ✅ Open `/`, click both cards, both pages render the layout skeletons
 
-- [ ] **2. Database schema + seed**
-  - [ ] 2.1 Enums + 8 tables in `server/db/schema.ts` (with FKs, index on `sos_signals.createdAt` and `zoneId`)
-  - [ ] 2.2 `npm run db:push`
-  - [ ] 2.3 `server/db/seed.ts`: 6 zones, ~20 nodes, ~30 edges, 10 shelters (2 reserve/inactive, one at 85%), 6 teams, 40 citizens, 12 older SOS signals
-  - [ ] 2.4 Seed is re-runnable (clears tables first)
-  - [ ] 2.5 First vertical slice: `zone.service.ts` + `GET /api/zones`
+- [x] **2. Database schema + seed**
+  - [x] 2.1 Enums + 8 tables in `server/db/schema.ts` (with FKs, index on `sos_signals.createdAt` and `zoneId`)
+  - [x] 2.2 `npm run db:push`
+  - [x] 2.3 `server/db/seed.ts`: 6 zones, ~20 nodes, ~30 edges, 10 shelters (2 reserve/inactive, one at 85%), 6 teams, 40 citizens, 12 older SOS signals
+  - [x] 2.4 Seed is re-runnable (clears tables first)
+  - [x] 2.5 First vertical slice: `zone.service.ts` + `GET /api/zones`
   - ✅ `/api/zones` in the browser returns 6 zones; `db:studio` shows seeded rows
 
 - [ ] **3. City map (SVG)**
