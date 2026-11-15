@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { CityMap } from "@/components/city-map";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
 import { t } from "@/lib/i18n";
-import type { MapData, NearestShelter, RouteResult, Zone } from "@/lib/types";
+import type { MapData, NearestShelter, RouteReason, RouteResult, Zone } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type Origin = { lat: number; lng: number };
@@ -36,6 +36,9 @@ export function CitizenView() {
   const [route, setRoute] = useState<RouteResult | null>(null);
   const [routeLoading, setRouteLoading] = useState(false);
   const [routeError, setRouteError] = useState<"none" | "error" | null>(null);
+
+  const [banner, setBanner] = useState<{ reason: RouteReason; from: string; to: string } | null>(null);
+  const prevShelter = useRef<{ id: string; name: string } | null>(null);
 
   const loadMap = useCallback(() => {
     setMapError(false);
@@ -69,16 +72,30 @@ export function CitizenView() {
   useEffect(() => {
     if (!origin) return;
     let cancelled = false;
+    prevShelter.current = null;
+    setBanner(null);
     setRouteLoading(true);
     setRouteError(null);
     setRoute(null);
-    api
-      .getRoute(origin.lat, origin.lng)
-      .then((r) => !cancelled && setRoute(r))
-      .catch((e: Error) => !cancelled && setRouteError(e.message === "No reachable shelter" ? "none" : "error"))
-      .finally(() => !cancelled && setRouteLoading(false));
+    const poll = (first: boolean) =>
+      api
+        .getRoute(origin.lat, origin.lng, prevShelter.current?.id)
+        .then((r) => {
+          if (cancelled) return;
+          if (r.rerouted && r.reason && prevShelter.current) {
+            setBanner({ reason: r.reason, from: prevShelter.current.name, to: r.shelter.name });
+          }
+          prevShelter.current = { id: r.shelter.id, name: r.shelter.name };
+          setRoute(r);
+          setRouteError(null);
+        })
+        .catch((e: Error) => !cancelled && setRouteError(e.message === "No reachable shelter" ? "none" : "error"))
+        .finally(() => first && !cancelled && setRouteLoading(false));
+    poll(true);
+    const timer = setInterval(() => poll(false), 3000);
     return () => {
       cancelled = true;
+      clearInterval(timer);
     };
   }, [origin]);
 
@@ -158,6 +175,14 @@ export function CitizenView() {
         {origin && (
           <div className="rounded-xl border border-blue-600 p-4">
             <h2 className="text-lg font-semibold">{t.citizen.route}</h2>
+            {banner && (
+              <div role="status" className="mt-2 rounded-lg bg-amber-100 p-3 text-sm text-amber-900">
+                <div className="font-semibold">{t.citizen.reroute[banner.reason]}</div>
+                <div>
+                  {t.citizen.reroute.from}: {banner.from} · {t.citizen.reroute.to}: {banner.to}
+                </div>
+              </div>
+            )}
             {routeLoading ? (
               <Skeleton className="mt-2 h-12 w-full" />
             ) : route ? (

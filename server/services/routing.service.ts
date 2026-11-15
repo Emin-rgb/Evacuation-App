@@ -4,12 +4,12 @@ import { roadNodes, shelters } from "@/server/db/schema";
 import { haversineM, nearestNode, type LatLng } from "@/server/engine/geo";
 import { buildPath, shortestPaths } from "@/server/engine/routing";
 import { trafficProvider } from "@/server/providers/traffic.provider";
-import type { RouteResult } from "@/lib/types";
+import type { RouteReason, RouteResult } from "@/lib/types";
 
 const FULL_PCT = 90;
 const WALK_M_PER_MIN = 80;
 
-export async function findRoute(origin: LatLng): Promise<RouteResult | null> {
+export async function findRoute(origin: LatLng, prevShelterId?: string): Promise<RouteResult | null> {
   const [nodes, edges, active] = await Promise.all([
     db.select().from(roadNodes),
     trafficProvider.getEdges(),
@@ -38,6 +38,20 @@ export async function findRoute(origin: LatLng): Promise<RouteResult | null> {
     .map(({ lat, lng }) => ({ lat, lng }));
   const distanceM = Math.round(best.total);
 
+  let reason: RouteReason | null = null;
+  if (prevShelterId) {
+    if (prevShelterId !== s.id) {
+      const old = active.find((x) => x.id === prevShelterId);
+      const oldFull = !old || (old.occupancy / old.capacity) * 100 >= FULL_PCT;
+      reason = oldFull ? "shelter_full" : "road_closed";
+    } else {
+      // same shelter: did closures force a detour vs. the all-open graph?
+      const open = shortestPaths(edges.map((e) => ({ ...e, status: "open" as const })), start.id);
+      const ideal = buildPath(open.prev, start.id, s.nodeId).join();
+      if (ideal !== buildPath(prev, start.id, s.nodeId).join()) reason = "road_closed";
+    }
+  }
+
   return {
     shelter: {
       id: s.id,
@@ -52,7 +66,7 @@ export async function findRoute(origin: LatLng): Promise<RouteResult | null> {
     path: [origin, ...path, { lat: s.lat, lng: s.lng }],
     distanceM,
     etaMin: Math.max(1, Math.round(distanceM / WALK_M_PER_MIN)),
-    rerouted: false,
-    reason: null,
+    rerouted: reason !== null,
+    reason,
   };
 }

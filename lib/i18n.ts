@@ -40,6 +40,12 @@ export const t = {
     routeMin: "dəq",
     routeNone: "Əlçatan məntəqə tapılmadı.",
     routeError: "Marşrut yüklənmədi.",
+    reroute: {
+      road_closed: "Yol bağlandı → alternativ marşrut",
+      shelter_full: "Məntəqə 90% dolub → yeni məntəqə",
+      from: "Əvvəlki",
+      to: "Yeni",
+    },
     types: { shelter: "Sığınacaq", park: "Park", stadium: "Stadion" },
     sos: "SOS",
     safe: "Təhlükəsizəm",

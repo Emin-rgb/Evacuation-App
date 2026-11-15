@@ -1,15 +1,15 @@
 import { NextResponse } from "next/server";
-import { nearestQuerySchema } from "@/lib/schemas";
+import { routeQuerySchema } from "@/lib/schemas";
 import { findRoute } from "@/server/services/routing.service";
 
 export async function GET(req: Request) {
   const params = Object.fromEntries(new URL(req.url).searchParams);
-  const parsed = nearestQuerySchema.safeParse(params);
+  const parsed = routeQuerySchema.safeParse(params);
   if (!parsed.success) {
     return NextResponse.json({ error: "Invalid lat/lng" }, { status: 400 });
   }
   try {
-    const route = await findRoute(parsed.data);
+    const route = await findRoute({ lat: parsed.data.lat, lng: parsed.data.lng }, parsed.data.prev);
     if (!route) return NextResponse.json({ error: "No reachable shelter" }, { status: 404 });
     return NextResponse.json(route);
   } catch (err) {

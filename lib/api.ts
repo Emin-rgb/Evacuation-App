@@ -27,7 +27,8 @@ export const api = {
   getZones: () => get<Zone[]>("/api/zones"),
   getNearestShelters: (lat: number, lng: number) =>
     get<NearestShelter[]>(`/api/shelters/nearest?lat=${lat}&lng=${lng}`),
-  getRoute: (lat: number, lng: number) => get<RouteResult>(`/api/route?lat=${lat}&lng=${lng}`),
+  getRoute: (lat: number, lng: number, prev?: string) =>
+    get<RouteResult>(`/api/route?lat=${lat}&lng=${lng}${prev ? `&prev=${prev}` : ""}`),
   getDashboard: () => get<DashboardData>("/api/dashboard"),
   setRoadStatus: (id: string, status: RoadStatus) =>
     patch<{ id: string; name: string; status: RoadStatus }>(`/api/traffic/roads/${id}`, { status }),

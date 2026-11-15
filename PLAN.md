@@ -102,10 +102,10 @@ Each task ends with a **✅ Browser check**. Do them in order; tick them off whe
   - [x] 8.3 Toast on each action
   - ✅ Closing a road turns it red on the dispatcher map; setting occupancy recolours the shelter
 
-- [ ] **9. Auto-reroute (citizen)**
-  - [ ] 9.1 `/citizen` re-fetches `/api/route` every 3 s
-  - [ ] 9.2 Service returns `reason`: `road_closed` (previous path now blocked) or `shelter_full` (≥90%)
-  - [ ] 9.3 Reroute banner with the reason + old vs new shelter; map updates
+- [x] **9. Auto-reroute (citizen)**
+  - [x] 9.1 `/citizen` re-fetches `/api/route` every 3 s
+  - [x] 9.2 Service returns `reason`: `road_closed` (previous path now blocked) or `shelter_full` (≥90%)
+  - [x] 9.3 Reroute banner with the reason + old vs new shelter; map updates
   - ✅ Close a road on the route → citizen banner "Yol bağlandı" + new route; set shelter to 92% → "90% dolub" + next shelter
 
 - [ ] **10. SOS + "I'm safe"**
