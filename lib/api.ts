@@ -1,10 +1,23 @@
-import type { DashboardData, MapData, NearestShelter, RouteResult, TrafficEdge, Zone } from "@/lib/types";
+import type { DashboardData, MapData, NearestShelter, RoadStatus, RouteResult, TrafficEdge, Zone } from "@/lib/types";
 
 async function get<T>(url: string): Promise<T> {
   const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) {
     const body = await res.json().catch(() => null);
     throw new Error(body?.error ?? `Request failed (${res.status})`);
+  }
+  return res.json() as Promise<T>;
+}
+
+async function patch<T>(url: string, body: unknown): Promise<T> {
+  const res = await fetch(url, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => null);
+    throw new Error(err?.error ?? `Request failed (${res.status})`);
   }
   return res.json() as Promise<T>;
 }
@@ -16,5 +29,9 @@ export const api = {
     get<NearestShelter[]>(`/api/shelters/nearest?lat=${lat}&lng=${lng}`),
   getRoute: (lat: number, lng: number) => get<RouteResult>(`/api/route?lat=${lat}&lng=${lng}`),
   getDashboard: () => get<DashboardData>("/api/dashboard"),
+  setRoadStatus: (id: string, status: RoadStatus) =>
+    patch<{ id: string; name: string; status: RoadStatus }>(`/api/traffic/roads/${id}`, { status }),
+  setShelterOccupancy: (id: string, occupancy: number) =>
+    patch<{ id: string; name: string; occupancyPct: number }>(`/api/shelters/${id}`, { occupancy }),
   getTraffic: () => get<TrafficEdge[]>("/api/traffic"),
 };

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CityMap } from "@/components/city-map";
+import { SimulatorPanel } from "@/components/simulator-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -109,6 +110,9 @@ export function DispatcherView() {
           {t.dispatcher.error}
         </p>
       )}
+      <div className="flex justify-end">
+        <SimulatorPanel map={map} onChanged={load} />
+      </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {kpis.map((k) => (
           <Card key={k.label}>

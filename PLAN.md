@@ -8,10 +8,10 @@
 - **Key entities (data model):**
   - `zones`: Baku districts (Yasamal, Nəsimi, Nərimanov, Səbail, Binəqədi, Xətai)
   - `road_nodes`: intersections (lat/lng)
-  - `road_edges`: road segments between 2 nodes, `lengthM`, status `open|closed`
-  - `shelters`: gathering points, type `shelter|park|stadium`, zone, nearest node, capacity, occupancy, `isActive`, `isReserve`
-  - `citizens`: anonymous uuid (kept in localStorage), zone, lat/lng, status `unknown|safe|sos`
-  - `sos_signals`: citizen, type `fire|collapse|flood|medical`, lat/lng, zone, status `new|assigned|resolved`, createdAt
+  - `road_edges`: road segments between 2 nodes, `lengthM`, status `open|closed`, **`isAccessible` (drop 1)**
+  - `shelters`: gathering points, type `shelter|park|stadium`, zone, nearest node, capacity, occupancy, `isActive`, `isReserve`, **`isAccessible` (drop 1)**
+  - `citizens`: anonymous uuid (kept in localStorage), zone, lat/lng, status `unknown|safe|sos`, **`role` `standard|priority` (drop 1)**
+  - `sos_signals`: citizen, type `fire|collapse|flood|medical`, lat/lng, zone, status `new|assigned|resolved`, **`priority` 0|1 (drop 1)**, createdAt
   - `rescue_teams`: name, status `available|en_route|on_scene`, zone, alertId
   - `alerts`: kind `sos_cluster|shelter_overload`, zone, shelter?, sosCount, message, status `open|approved|dismissed`
 
@@ -83,23 +83,23 @@ Each task ends with a **✅ Browser check**. Do them in order; tick them off whe
   - [x] 5.4 Draw the route on the map + route card (target shelter, distance, ETA on foot)
   - ✅ The route line is highlighted from the citizen location to the recommended shelter
 
-- [ ] **6. Dispatcher dashboard (read-only, live)**
-  - [ ] 6.1 `dashboard.service.ts` + `GET /api/dashboard` → stats, shelters, teams, SOS in the last 60 min, open alerts, closed edges
-  - [ ] 6.2 KPI row: active SOS, safe citizens, critical shelters (≥90%), available teams
-  - [ ] 6.3 CityMap with SOS dots (colour by type)
-  - [ ] 6.4 Tabs: SOS feed table / Shelters table (occupancy bar) / Teams list (status badge)
-  - [ ] 6.5 Poll every 3 s; skeleton, empty and error states
+- [x] **6. Dispatcher dashboard (read-only, live)**
+  - [x] 6.1 `dashboard.service.ts` + `GET /api/dashboard` → stats, shelters, teams, SOS in the last 60 min, open alerts, closed edges
+  - [x] 6.2 KPI row: active SOS, safe citizens, critical shelters (≥90%), available teams
+  - [x] 6.3 CityMap with SOS dots (colour by type)
+  - [x] 6.4 Tabs: SOS feed table / Shelters table (occupancy bar) / Teams list (status badge)
+  - [x] 6.5 Poll every 3 s; skeleton, empty and error states
   - ✅ `/dispatcher` shows seeded SOS, shelters and teams; editing a row in `db:studio` shows up within 3 s
 
-- [ ] **7. Deploy (by ~1:30)**
-  - [ ] 7.1 Vercel project + `DATABASE_URL` env
-  - [ ] 7.2 `npm run build` passes locally, deploy
+- [x] **7. Deploy (by ~1:30)**
+  - [x] 7.1 Vercel project + `DATABASE_URL` env
+  - [x] 7.2 `npm run build` passes locally, deploy
   - ✅ Steps 1–6 work on the production URL
 
-- [ ] **8. Simulator panel**
-  - [ ] 8.1 `simulator.service.ts`; `PATCH /api/traffic/roads/:id` `{status}`; `PATCH /api/shelters/:id` `{occupancy}`
-  - [ ] 8.2 `Sheet` on `/dispatcher`: road list with open/close toggle, shelter list with occupancy input + quick buttons (+10%, 92%, 96%)
-  - [ ] 8.3 Toast on each action
+- [x] **8. Simulator panel**
+  - [x] 8.1 `simulator.service.ts`; `PATCH /api/traffic/roads/:id` `{status}`; `PATCH /api/shelters/:id` `{occupancy}`
+  - [x] 8.2 `Sheet` on `/dispatcher`: road list with open/close toggle, shelter list with occupancy input + quick buttons (+10%, 92%, 96%)
+  - [x] 8.3 Toast on each action
   - ✅ Closing a road turns it red on the dispatcher map; setting occupancy recolours the shelter
 
 - [ ] **9. Auto-reroute (citizen)**
@@ -143,7 +143,16 @@ Each task ends with a **✅ Browser check**. Do them in order; tick them off whe
   - ✅ README renders well on GitHub
 
 - [ ] **15. Challenge drops** (fill in when announced; log each change in the README)
-  - [ ] 15.1 12:00 drop: ____ (hooks ready: i18n dictionary for language, role concept for a new role)
+  - [ ] **15.1 Drop 1: Priority SOS role (accessible evacuation) + AZ/EN i18n** (details below; additive only, existing flows stay as they are)
+    - [ ] 15.1a Schema (additive, all with defaults, then `db:push`): `citizens.role` enum `standard|priority` default `standard`; `road_edges.isAccessible` bool default `true`; `shelters.isAccessible` bool default `true`; `sos_signals.priority` int default `0` (1 = Critical Priority#1)
+    - [ ] 15.1b Seed: mark ~6 of 31 edges and 2 of 10 shelters as not accessible (stairs / no ramp), keep the graph connected for accessible-only routing; add ~3 priority citizens; re-run `db:seed`
+    - [ ] 15.1c Engine: `routing.ts` gets an optional `{ accessibleOnly }` filter that skips edges with `isAccessible=false` (default off, so `/api/route` without it behaves exactly as today); `GraphEdge` gets `isAccessible?`
+    - [ ] 15.1d Services/API: `routing.service` + `GET /api/route?lat&lng&citizenId?` use `accessibleOnly` and skip inaccessible shelters when the citizen is `priority`; `POST /api/citizens` accepts `role`; `POST /api/sos` sets `priority=1` for priority citizens; `GET /api/shelters/nearest` returns `isAccessible`
+    - [ ] 15.1e Citizen UI: role toggle "Xüsusi qayğıya ehtiyacım var" (kept in localStorage, try/catch); route card shows an "Əlçatan marşrut" badge; a priority SOS shows "Kritik Prioritet #1" confirmation
+    - [ ] 15.1f Dispatcher: priority SOS pinned to the top of the feed with a red "Priority#1" badge; map dot gets a ring; KPI or badge counts priority SOS; crisis detector treats a priority SOS as an alert trigger on its own only if you decide so (default: it counts as 1 normal signal, no change to the rule)
+    - [ ] 15.1g i18n: turn `lib/i18n.ts` into `lib/i18n/az.ts` + `en.ts` (same keys, typed from `az`) + a `LanguageProvider`/`useT()` hook with an AZ/EN switch in the header, persisted in localStorage (try/catch), `<html lang>` updated; replace the static `t` imports in `app/**` and `components/**` with `useT()`; server-sent messages (alert text, route `reason`) go out as codes and are translated on the client
+    - [ ] 15.1h Check that every UI string is in both dictionaries (a typed `Dictionary` makes a missing key a compile error)
+    - ✅ Browser check: switch AZ/EN and every screen changes language; as a priority citizen the route avoids a non-accessible edge and never ends at a non-accessible shelter; the SOS shows Priority#1 on the dispatcher; a standard citizen's route is unchanged
   - [ ] 15.2 13:00 drop: ____ (hooks ready: `TrafficProvider` fallback + "degraded mode" badge for an API outage)
   - [ ] 15.3 14:00 drop: ____ (hooks ready: rate limit on `POST /api/sos`, pagination, indexes for load; dispatcher PIN via `proxy.ts` for security)
 
@@ -160,4 +169,6 @@ Each task ends with a **✅ Browser check**. Do them in order; tick them off whe
 - Crisis detection runs synchronously after each write (SOS, occupancy), so no background jobs.
 - Pure engine functions in `server/engine/` keep logic testable and easy to explain.
 - Tests: unit tests only on the engine, using built-in `node:test` (approved exception to "no tests unless asked").
+- Drop 1: accessibility is a flag on edges/shelters and a role on the citizen, so the same Dijkstra serves both users with one filter; no second graph, no new tables.
+- Drop 1: i18n is a typed AZ/EN dictionary + client hook, no library; the server returns codes, never display text.
 - NOT building: real auth, real map/traffic/geocoding APIs, WebSockets, SMS/push, admin CRUD, AI feature, charts lib, Docker, multi-city.
