@@ -69,11 +69,11 @@ Each task ends with a **✅ Browser check**. Do them in order; tick them off whe
   - [x] 3.4 Render on `/citizen` with skeleton + error state
   - ✅ `/citizen` shows the Baku road schematic with coloured shelter markers
 
-- [ ] **4. Nearest shelters (citizen)**
-  - [ ] 4.1 `server/engine/geo.ts`: haversine, nearest node
-  - [ ] 4.2 `GET /api/shelters/nearest?lat&lng` (Zod) → active shelters sorted by distance, with `occupancyPct`
-  - [ ] 4.3 District `Select` (uses zone center) + "Mənim yerim" button (browser geolocation, falls back to the district)
-  - [ ] 4.4 Shelter cards: name, type badge, distance, occupancy bar; empty state
+- [x] **4. Nearest shelters (citizen)**
+  - [x] 4.1 `server/engine/geo.ts`: haversine, nearest node
+  - [x] 4.2 `GET /api/shelters/nearest?lat&lng` (Zod) → active shelters sorted by distance, with `occupancyPct`
+  - [x] 4.3 District `Select` (uses zone center) + "Mənim yerim" button (browser geolocation, falls back to the district)
+  - [x] 4.4 Shelter cards: name, type badge, distance, occupancy bar; empty state
   - ✅ Changing district re-sorts the 3 nearest shelters
 
 - [ ] **5. Evacuation route**

@@ -1,4 +1,4 @@
-import type { MapData } from "@/lib/types";
+import type { MapData, NearestShelter, Zone } from "@/lib/types";
 
 async function get<T>(url: string): Promise<T> {
   const res = await fetch(url, { cache: "no-store" });
@@ -11,4 +11,7 @@ async function get<T>(url: string): Promise<T> {
 
 export const api = {
   getMap: () => get<MapData>("/api/map"),
+  getZones: () => get<Zone[]>("/api/zones"),
+  getNearestShelters: (lat: number, lng: number) =>
+    get<NearestShelter[]>(`/api/shelters/nearest?lat=${lat}&lng=${lng}`),
 };

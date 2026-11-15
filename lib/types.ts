@@ -21,3 +21,5 @@ export type MapShelter = {
   occupancyPct: number;
 };
 export type MapData = { nodes: MapNode[]; edges: MapEdge[]; shelters: MapShelter[] };
+export type Zone = { id: string; name: string; centerLat: number; centerLng: number };
+export type NearestShelter = MapShelter & { distanceM: number };
