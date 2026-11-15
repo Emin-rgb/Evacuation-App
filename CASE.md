@@ -49,3 +49,15 @@ $3$ nəfərlik komandanız $4$ saat ərzində **"Urban Crisis & Crowd Evacuation
 - **Test, etibarlılıq və dayanıqlılıq:** $15\%$
 - **Süni intellekt (AI) alətlərinin nəzarətli istifadəsi:** $10\%$
 - **Demo, komanda işi və texniki müdafiə:** $10\%$
+
+## Challenge Drop 1
+
+Sistemə "Hərəkət Məhdudiyyətli Şəxs/ Xüsusi Qayğıya Ehtiyacı Olan Vətəndaş" (Prioritet SOS) rolu əlavə eedilməlidir. Bu rola malik istifadəçi SOS siqnalı göndərildikdə müraciət avtomatik olaraq " Kritik Prioritet" (Priority#1) statusu almalı vəə sistem ona yalnız əlil arabası / tibbi nəqliyyat üçün əlçatab olan (panduslu və maneəsiz) təxliyyə marşurutu təyin eedilməlidir.
+
+Əlavə olaraq, bütün istifadəçi interfeysi (UI) həm Azərbaycan (Az), Hhəm də ingilis (En) dillərində dinamik olaraq dəyişdirilə bilən (i18n) olmalıdır.
+
+### Challenge Drop 2
+
+Vətəndaş modulunun istifadə etdiyi Xarici Xəritə və Marşurutlaşdırma API- sı sıradan çıxmışdır (HTTP 503 Service Unavailable xətası qaytarır və ya cavab müddəti 5 saniyəni keçir).
+
+Sistem bu xəta zamanı çökməməli (unhandled excption verməməli), Circuit Braker / Fallback mxanizmi avtomatik işə düşməli və məsafə / marşrut hesablamalarını lokal ehtiyyat məlumat bazasından (statik koordinat matrisi və ya son keşlənmiş marşurutlar.0 icra edərək istifadəçiyə "Oflayn / Ehtiyat marşrut rejimində işləyir" bildirişi ilə xidmət göstərməyə davam etdirməlidir.

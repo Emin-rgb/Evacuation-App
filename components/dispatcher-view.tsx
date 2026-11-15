@@ -67,6 +67,8 @@ export function DispatcherView() {
   const [selectedSos, setSelectedSos] = useState<string | null>(null);
   const [health, setHealth] = useState<(ProviderHealth & { mode: FailureMode }) | null>(null);
 
+  const [refreshing, setRefreshing] = useState(false);
+
   const load = useCallback(() => {
     api
       .getProviderHealth()
@@ -228,6 +230,9 @@ export function DispatcherView() {
                 : t.provider.chipLive}
           </Badge>
         )}
+        <span className="text-muted-foreground mr-auto hidden text-xs md:inline">
+          {t.dispatcher.simulatorHelp}
+        </span>
         <SimulatorPanel map={map} onChanged={load} />
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -249,8 +254,9 @@ export function DispatcherView() {
 
       <section className="flex flex-col gap-2">
         <h2 className="text-lg font-semibold">{t.dispatcher.alerts}</h2>
+        <p className="text-muted-foreground text-sm">{t.dispatcher.alertsHelp}</p>
         {data.alerts.length === 0 ? (
-          <Empty>{t.dispatcher.noAlerts}</Empty>
+          <Empty>{`${t.dispatcher.noAlerts} ${t.dispatcher.noAlertsHint}`}</Empty>
         ) : (
           data.alerts.map((a) => (
             <div
@@ -312,6 +318,12 @@ export function DispatcherView() {
             data={map}
             sos={sosPoints}
             updatedAt={updatedAt}
+            onRefresh={() => {
+              setRefreshing(true);
+              load();
+              setTimeout(() => setRefreshing(false), 700);
+            }}
+            refreshing={refreshing}
             degraded={degraded}
             highlightSosId={selectedSos}
             focus={focusSos ? [focusSos] : undefined}

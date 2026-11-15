@@ -387,3 +387,9 @@ findRoute → trafficProvider.getEdgesWithMeta()
 - [`docs/technical.md`](docs/technical.md): approach, technology choices, security, performance, testing strategy, limitations, future work.
 - [`docs/ai-declaration.md`](docs/ai-declaration.md): AI tools used, when and how.
 - [`PLAN.md`](PLAN.md): the task plan this build followed.
+
+## Map and onboarding update
+
+- The SVG schematic was replaced by a real map: Leaflet + OpenStreetMap tiles (`components/city-map-inner.tsx`, loaded client-only via `next/dynamic`). Same `CityMap` props as before. Road lines are straight segments between approximate intersections, and tiles need internet.
+- The map has an **Update** button that refetches immediately; 3 s background polling stays so auto-reroute and Red Alert still appear on their own.
+- Landing page explains the problem and the 4-step flow; `/citizen` and `/dispatcher` show a guided 8-step demo panel.

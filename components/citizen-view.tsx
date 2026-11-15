@@ -49,6 +49,8 @@ export function CitizenView() {
   const [banner, setBanner] = useState<{ reason: RouteReason; from: string; to: string } | null>(null);
   const prevShelter = useRef<{ id: string; name: string } | null>(null);
   const lastMode = useRef<"live" | "fallback" | null>(null);
+  const pollRef = useRef<(() => Promise<unknown>) | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   const loadMap = useCallback(() => {
     setMapError(false);
@@ -114,14 +116,27 @@ export function CitizenView() {
         })
         .catch((e: Error) => !cancelled && setRouteError(e.message === "No reachable shelter" ? "none" : "error"))
         .finally(() => first && !cancelled && setRouteLoading(false));
+    pollRef.current = () => poll(false);
     poll(true);
     const timer = setInterval(() => poll(false), 3000);
     return () => {
       cancelled = true;
       clearInterval(timer);
+      pollRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `t` only feeds a toast message
   }, [origin, routeCitizenId, targetId]);
+
+  async function refreshNow() {
+    setRefreshing(true);
+    loadMap();
+    if (origin) loadShelters(origin);
+    try {
+      await pollRef.current?.();
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   function pickZone(id: string) {
     setZoneId(id);
@@ -179,6 +194,8 @@ export function CitizenView() {
           origin={origin}
           highlightShelterId={route?.shelter.id ?? top[0]?.id}
           updatedAt={updatedAt}
+          onRefresh={refreshNow}
+          refreshing={refreshing}
           degraded={route?.mode === "fallback"}
           onShelterClick={(id) => setTargetId(id)}
           focus={route?.path}

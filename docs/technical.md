@@ -363,3 +363,7 @@ The app is a demo MVP with an intentionally small attack surface, but we applied
 - Server-sent events or WebSockets for push updates; SMS/push notifications to citizens near a closed road or full shelter.
 - Real occupancy from check-ins or sensors; heatmaps and forecasting of shelter saturation.
 - Multi-city support and audit/reporting for post-incident review.
+
+## Map (update)
+
+Leaflet + OpenStreetMap replaces the SVG schematic for clarity. Trade-off: tiles need internet during the demo (a notice appears if they fail; data and routing still work). Roads/routes remain the seed graph drawn as polylines.
