@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="az">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>API sənədləri (Swagger)</title>
+    <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui.css" />
+    <style>
+      body { margin: 0; }
+      #fallback { padding: 24px; font-family: system-ui, sans-serif; }
+    </style>
+  </head>
+  <body>
+    <div id="swagger-ui"></div>
+    <noscript><p id="fallback">JavaScript lazımdır. Xam spesifikasiya: <a href="/openapi.yaml">/openapi.yaml</a></p></noscript>
+    <script src="https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui-bundle.js"></script>
+    <script>
+      if (window.SwaggerUIBundle) {
+        window.SwaggerUIBundle({ url: "/openapi.yaml", dom_id: "#swagger-ui", deepLinking: true, persistAuthorization: true });
+      } else {
+        document.body.insertAdjacentHTML(
+          "beforeend",
+          '<p id="fallback">Swagger UI yüklənmədi (internet lazımdır). Xam spesifikasiya: <a href="/openapi.yaml">/openapi.yaml</a></p>'
+        );
+      }
+    </script>
+  </body>
+</html>

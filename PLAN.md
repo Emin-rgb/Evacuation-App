@@ -259,6 +259,23 @@ Each task ends with a **✅ Browser check**. Do them in order; tick them off whe
   - Note: the dashboard lists only open alerts, so "approved by" shows in the approve toast and in the DB (`handled_by`), not in a history list.
   - (was) Open questions: (1) demo emails/names and the demo password; (2) is "supervisor" the right name for the read-only role; (3) should a failed login lock the account for a few minutes, or are rate limits enough (default: rate limits only).
 
+- [x] **22. Docs in Azerbaijani + audit** (done)
+  - [x] 22.1 README.md (AZ): arxitektura diaqramı, işə salma, demo, API, drop-lar, məlum problemlər
+  - [x] 22.2 `docs/Texniki-Izah-Senedi.docx` (Word, AZ, 7 diaqram şəkli), `docs/diaqramlar.md`, `docs/erd.md`, `public/openapi.yaml` + `public/api-docs.html` (Swagger), `docs/ai-beyannamesi.md`
+  - [x] 22.3 Audit of every CASE.md feature + Drops 1-3 through the API: all pass (details in the technical doc, section 11)
+  - [x] 22.4 Fixed during the audit: citizen map/list now refresh every 6 s (reserve shelter appears without reload); seed resets simulator flags; demo district changed to Nərimanov
+
+- [ ] **23. Remaining and problematic (found in the audit)**
+  - [ ] 23.1 **Routing quality (biggest):** shelters snap to road nodes up to 5.1 km away (Olimpiya 4.9 km, Zığ 5.1 km, Dəmiryolçular 1.7 km, BDU 1.5 km) so the last leg is a long straight line; graph is only 20 nodes / 31 straight segments, lengths are straight-line, lines cross sea/buildings; Yasamal and Xətai have no road on the route so closing roads does nothing there. Fix = Task 19.7 (OSM Overpass real roads + polyline geometry, shelters connected < 300 m, heap Dijkstra)
+  - [ ] 23.2 ETA is walking-only (80 m/min); no vehicle / ambulance mode (5 km = ~70 min)
+  - [ ] 23.3 No endpoint/UI to resolve an SOS or move a team to `on_scene`; dashboard shows open alerts only (no handled history)
+  - [ ] 23.4 Case says "same zone OR 500 m"; only the 500 m rule exists
+  - [ ] 23.5 SOS returns 400 for real GPS outside the Baku bounding box
+  - [ ] 23.6 Automate the API audit as `scripts/smoke-test.ts` (and add it to CI); today only the engine has unit tests
+  - [ ] 23.7 Browser pass still to do by hand: console errors, mobile width of `/citizen`, loading/empty/error states, login form, hydration warnings (AZ/EN)
+  - [ ] 23.8 Shared rate limiter (Upstash/Redis), account management (signup, reset, MFA, session revoke), WebSockets instead of polling
+  - [ ] 23.9 Technical doc is a hand-built `.docx` (generator lives outside the repo); regenerate or edit it in Word if content changes. Swagger UI needs internet (CDN)
+
 - [ ] **17. Polish (demo-polish skill): CODE FREEZE at 3:15**
   - [x] 16.1 Re-seed to the demo starting state; rehearse the 8-step demo script (done through the API with a script; found and fixed: seed did not reset simulator flags, so the demo could start in offline mode; "close a road" did not trigger a reroute from Yasamal, so the script now uses Nərimanov + "Tbilisi yolu")
   - [ ] 16.2 (NOT done: the browser tool failed; do by hand) Check every screen's loading / empty / error states, mobile width for `/citizen`

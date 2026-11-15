@@ -119,7 +119,16 @@ export function CitizenView() {
         .finally(() => first && !cancelled && setRouteLoading(false));
     pollRef.current = () => poll(false);
     poll(true);
-    const timer = setInterval(() => poll(false), 3000);
+    // Every 2nd tick (6 s) also refresh the map and nearest list silently, so a reserve shelter opened by the
+    // dispatcher shows up without a manual refresh (no skeleton flash: errors are ignored, old data stays).
+    let tick = 0;
+    const timer = setInterval(() => {
+      poll(false);
+      if (++tick % 2 === 0) {
+        api.getMap().then((m) => !cancelled && setMap(m)).catch(() => {});
+        api.getNearestShelters(origin.lat, origin.lng).then((l) => !cancelled && setShelters(l)).catch(() => {});
+      }
+    }, 3000);
     return () => {
       cancelled = true;
       clearInterval(timer);

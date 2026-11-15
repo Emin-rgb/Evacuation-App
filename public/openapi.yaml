@@ -1,0 +1,698 @@
+openapi: 3.0.3
+info:
+  title: Fövqəladə Hallar və Təxliyə Sistemi API
+  version: 1.0.0
+  description: |
+    **Urban Crisis & Crowd Evacuation Engine** üçün REST API.
+
+    - Vətəndaş endpointləri açıqdır (anonim vətəndaş = `citizenId` UUID-si).
+    - Dispetçer endpointləri `dac_session` cookie-si tələb edir (`POST /api/auth/login` ilə alınır).
+      `supervisor` yalnız oxuya bilər, `dispatcher` bütün əməliyyatları edə bilər.
+    - Xətalar həmişə eyni formadadır: `{ "error": "mesaj" }`.
+    - Giriş məlumatları hər sərhəddə Zod ilə yoxlanılır; yanlış giriş `400` qaytarır.
+servers:
+  - url: http://localhost:3000
+    description: Lokal
+tags:
+  - name: Vətəndaş
+    description: Rayon/koordinat üzrə məntəqələr, marşrut, SOS, "Təhlükəsizəm"
+  - name: Dispetçer
+    description: Canlı panel, Qırmızı Həyəcan təsdiqi (giriş tələb olunur)
+  - name: Autentifikasiya
+    description: Dispetçer hesabları (e-poçt + parol, JWT cookie)
+  - name: Simulyator
+    description: Demo üçün hadisə yaradan endpointlər (yalnız dispetçer)
+  - name: Sistem
+    description: Marşrut provayderinin vəziyyəti, risk modulu
+paths:
+  /api/zones:
+    get:
+      tags: [Vətəndaş]
+      summary: Rayonların siyahısı (mərkəz koordinatları ilə)
+      responses:
+        "200":
+          description: Rayonlar
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/Zone" } }
+  /api/map:
+    get:
+      tags: [Vətəndaş]
+      summary: Xəritə məlumatı (düyünlər, yollar, aktiv məntəqələr, rayonlar)
+      responses:
+        "200":
+          description: Xəritə
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MapData" }
+  /api/shelters/nearest:
+    get:
+      tags: [Vətəndaş]
+      summary: Koordinata görə ən yaxın toplanış məntəqələri (doluluq faizi ilə)
+      description: Aktiv məntəqələr məsafəyə görə (düz xətt) artan sıra ilə qaytarılır.
+      parameters:
+        - { name: lat, in: query, required: true, schema: { type: number, minimum: -90, maximum: 90 }, example: 40.4225 }
+        - { name: lng, in: query, required: true, schema: { type: number, minimum: -180, maximum: 180 }, example: 49.8742 }
+      responses:
+        "200":
+          description: Məntəqələr
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/NearestShelter" } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+  /api/route:
+    get:
+      tags: [Vətəndaş]
+      summary: Tövsiyə olunan təxliyə marşrutu (avtomatik alternativ ilə)
+      description: |
+        Dijkstra yalnız **açıq** yollar üzərində işləyir; doluluğu eşik dəyərdən (90%, sel riski yüksək olanda 80%)
+        çox olan məntəqələr keçilir. `prev` göndərilərsə və hədəf dəyişibsə, `reason` səbəbi kodla izah edir.
+        `citizenId` prioritet vətəndaşdırsa yalnız əlçatan yollar və məntəqələr istifadə olunur.
+        Xarici marşrut API-si işləmirsə `mode: fallback` ilə lokal ehtiyat məlumatla hesablanır.
+      parameters:
+        - { name: lat, in: query, required: true, schema: { type: number }, example: 40.4225 }
+        - { name: lng, in: query, required: true, schema: { type: number }, example: 49.8742 }
+        - { name: prev, in: query, required: false, schema: { type: string, format: uuid }, description: Əvvəlki tövsiyə olunan məntəqə }
+        - { name: citizenId, in: query, required: false, schema: { type: string, format: uuid } }
+        - { name: shelterId, in: query, required: false, schema: { type: string, format: uuid }, description: Vətəndaşın seçdiyi hədəf (istifadəyə yararlıdırsa) }
+      responses:
+        "200":
+          description: Marşrut
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RouteResult" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404":
+          description: Əlçatan və boş məntəqə yoxdur
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+  /api/traffic:
+    get:
+      tags: [Sistem]
+      summary: Marşrut provayderindən yol seqmentləri (açıq/bağlı)
+      responses:
+        "200":
+          description: Seqmentlər
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/TrafficEdge" } }
+  /api/traffic/health:
+    get:
+      tags: [Sistem]
+      summary: Circuit breaker vəziyyəti
+      responses:
+        "200":
+          description: Provayder sağlamlığı
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProviderHealth" }
+  /api/risk:
+    get:
+      tags: [Sistem]
+      summary: Gündəlik risk (zəlzələ + sel), indikativ
+      description: "USGS və Open-Meteo məlumatı; hər ikisi çökərsə `source: unavailable` ilə yenə `200` qaytarır."
+      parameters:
+        - { name: zoneId, in: query, required: false, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Risk
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RiskSnapshot" }
+  /api/citizens:
+    post:
+      tags: [Vətəndaş]
+      summary: Anonim vətəndaş yarat (yalnız UUID saxlanılır)
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                lat: { type: number }
+                lng: { type: number }
+                role: { type: string, enum: [standard, priority] }
+      responses:
+        "201":
+          description: Yaradıldı
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: { type: string, format: uuid }
+                  status: { type: string, enum: [unknown, safe, sos] }
+                  role: { type: string, enum: [standard, priority] }
+        "400": { $ref: "#/components/responses/BadRequest" }
+  /api/citizens/{id}:
+    patch:
+      tags: [Vətəndaş]
+      summary: "\"Təhlükəsizəm\" statusu və ya rolu (Xüsusi Qayğı) yenilə"
+      parameters:
+        - { $ref: "#/components/parameters/Id" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status: { type: string, enum: [safe] }
+                role: { type: string, enum: [standard, priority] }
+      responses:
+        "200":
+          description: Yeniləndi
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: { type: string, format: uuid }
+                  status: { type: string }
+                  role: { type: string }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /api/sos:
+    post:
+      tags: [Vətəndaş]
+      summary: Bir kliklə SOS göndər
+      description: |
+        Saxta SOS axınına qarşı qatlar (ucuzdan bahaya): IP limiti (20/dəq) → Zod (Bakı sərhədləri) →
+        vətəndaş limiti (3/dəq) → dublikat filtri (5 dəq ərzində həll olunmamış SOS varsa yenisi yazılmır, `200 duplicate:true`).
+        Prioritet vətəndaşın SOS-u avtomatik `priority = 1` (Kritik Prioritet #1) alır.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SosCreate" }
+      responses:
+        "201":
+          description: Yeni SOS yaradıldı
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SosCreated" }
+        "200":
+          description: Dublikat; mövcud SOS qaytarıldı
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SosCreated" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "429": { $ref: "#/components/responses/TooMany" }
+  /api/auth/login:
+    post:
+      tags: [Autentifikasiya]
+      summary: Dispetçer girişi (e-poçt + parol)
+      description: |
+        Uğurlu girişdə httpOnly `dac_session` cookie-si (HS256 JWT, 8 saat) qoyulur.
+        Yanlış e-poçt və yanlış parol eyni `401` cavabını verir. 5 uğursuz cəhddən sonra hesab 5 dəqiqə bloklanır (`423`).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email, example: nigar@dac.az }
+                password: { type: string, example: dispatcher123 }
+      responses:
+        "200":
+          description: Daxil oldu
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user: { $ref: "#/components/schemas/SessionUser" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401":
+          description: E-poçt və ya parol yanlışdır
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "423":
+          description: Hesab müvəqqəti bloklanıb
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error: { type: string }
+                  retryAfterSec: { type: integer }
+        "429": { $ref: "#/components/responses/TooMany" }
+  /api/auth/logout:
+    post:
+      tags: [Autentifikasiya]
+      summary: Çıxış (cookie silinir)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { type: object, properties: { ok: { type: boolean } } }
+  /api/auth/me:
+    get:
+      tags: [Autentifikasiya]
+      summary: "Cari istifadəçi (giriş edilməyibsə `user: null`)"
+      responses:
+        "200":
+          description: Sessiya
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    nullable: true
+                    allOf: [{ $ref: "#/components/schemas/SessionUser" }]
+  /api/dashboard:
+    get:
+      tags: [Dispetçer]
+      summary: Canlı panel (KPI, SOS, məntəqələr, briqadalar, açıq həyəcanlar)
+      description: "`supervisor` və `dispatcher` oxuya bilər. SOS siyahısı son 60 dəqiqənin ən yeni 100 qeydi ilə məhdudlaşdırılıb; KPI sayları dəqiqdir."
+      security: [{ cookieAuth: [] }]
+      responses:
+        "200":
+          description: Panel
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DashboardData" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /api/alerts/{id}/approve:
+    post:
+      tags: [Dispetçer]
+      summary: Qırmızı Həyəcanı bir kliklə təsdiq et
+      description: |
+        Bir atomik tranzaksiya: həyəcan `approved`, ən yaxın boş briqada `en_route`, ehtiyat məntəqə `active`,
+        rayonun yeni SOS-ları `assigned`. Təsdiq edən istifadəçi (`handled_by`) qeyd olunur.
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/Id" }
+      responses:
+        "200":
+          description: Təsdiqləndi
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApproveResult" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: Həyəcan artıq emal olunub
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+  /api/alerts/{id}/dismiss:
+    post:
+      tags: [Dispetçer]
+      summary: Həyəcanı rədd et
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/Id" }
+      responses:
+        "200":
+          description: Rədd edildi
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: { type: string, format: uuid }
+                  status: { type: string, enum: [dismissed] }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: Həyəcan artıq emal olunub
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+  /api/traffic/roads/{id}:
+    patch:
+      tags: [Simulyator]
+      summary: Yolu bağla / aç
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/Id" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [open, closed] }
+      responses:
+        "200":
+          description: Yeniləndi
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: { type: string, format: uuid }
+                  name: { type: string }
+                  status: { type: string, enum: [open, closed] }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /api/shelters/{id}:
+    patch:
+      tags: [Simulyator]
+      summary: Məntəqənin doluluğunu dəyiş (tutumla məhdudlaşır; aşkarlama işləyir)
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/Id" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [occupancy]
+              properties:
+                occupancy: { type: integer, minimum: 0 }
+      responses:
+        "200":
+          description: Yeniləndi
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: { type: string, format: uuid }
+                  name: { type: string }
+                  occupancy: { type: integer }
+                  capacity: { type: integer }
+                  occupancyPct: { type: integer }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /api/simulate/sos-burst:
+    post:
+      tags: [Simulyator]
+      summary: Yaxınlıqda bir neçə fərqli SOS yarat (Qırmızı Həyəcanı göstərmək üçün)
+      security: [{ cookieAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [lat, lng, count]
+              properties:
+                lat: { type: number }
+                lng: { type: number }
+                count: { type: integer, minimum: 1, maximum: 20 }
+      responses:
+        "201":
+          description: Yaradıldı
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  created: { type: integer }
+                  alertsCreated: { type: integer }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /api/simulate/provider:
+    patch:
+      tags: [Simulyator]
+      summary: Xarici marşrut API-sinin kəsintisini simulyasiya et (Drop 2)
+      security: [{ cookieAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mode]
+              properties:
+                mode: { type: string, enum: ["off", "503", "slow"] }
+      responses:
+        "200":
+          description: Rejim dəyişdi
+          content:
+            application/json:
+              schema: { type: object, properties: { mode: { type: string } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /api/simulate/risk:
+    patch:
+      tags: [Simulyator]
+      summary: Risk modulunu simulyasiya et (zəlzələ / güclü yağış)
+      security: [{ cookieAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mode]
+              properties:
+                mode: { type: string, enum: [none, quake, flood] }
+      responses:
+        "200":
+          description: Rejim dəyişdi
+          content:
+            application/json:
+              schema: { type: object, properties: { mode: { type: string } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: dac_session
+      description: "`POST /api/auth/login` tərəfindən qoyulan httpOnly JWT cookie-si"
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+  responses:
+    BadRequest:
+      description: Yanlış giriş (Zod yoxlaması)
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Unauthorized:
+      description: Sessiya yoxdur və ya etibarsızdır
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Forbidden:
+      description: Rol kifayət etmir (supervisor dispetçer əməliyyatı edə bilməz)
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    NotFound:
+      description: Tapılmadı
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    TooMany:
+      description: Sorğu limiti aşıldı (`Retry-After` başlığı ilə)
+      headers:
+        Retry-After: { schema: { type: integer } }
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+  schemas:
+    Error:
+      type: object
+      properties:
+        error: { type: string }
+    Zone:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, example: Nərimanov }
+        centerLat: { type: number }
+        centerLng: { type: number }
+    MapShelter:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        type: { type: string, enum: [shelter, park, stadium] }
+        lat: { type: number }
+        lng: { type: number }
+        capacity: { type: integer }
+        occupancy: { type: integer }
+        occupancyPct: { type: integer }
+        isAccessible: { type: boolean }
+    NearestShelter:
+      allOf:
+        - $ref: "#/components/schemas/MapShelter"
+        - type: object
+          properties:
+            distanceM: { type: integer }
+    MapData:
+      type: object
+      properties:
+        nodes:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string, format: uuid }
+              name: { type: string }
+              lat: { type: number }
+              lng: { type: number }
+        edges:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string, format: uuid }
+              fromNodeId: { type: string, format: uuid }
+              toNodeId: { type: string, format: uuid }
+              name: { type: string }
+              status: { type: string, enum: [open, closed] }
+        shelters: { type: array, items: { $ref: "#/components/schemas/MapShelter" } }
+        zones: { type: array, items: { $ref: "#/components/schemas/Zone" } }
+    RouteResult:
+      type: object
+      properties:
+        shelter: { $ref: "#/components/schemas/MapShelter" }
+        path:
+          type: array
+          description: "Başlanğıc nöqtə, yol düyünləri, məntəqə (düz xətli seqmentlər)"
+          items:
+            type: object
+            properties:
+              lat: { type: number }
+              lng: { type: number }
+        distanceM: { type: integer }
+        etaMin: { type: integer, description: "Piyada 80 m/dəq ilə" }
+        steps:
+          type: array
+          items:
+            type: object
+            properties:
+              name: { type: string }
+              distanceM: { type: integer }
+        rerouted: { type: boolean }
+        accessible: { type: boolean, description: "true = yalnız əlçatan (panduslu, maneəsiz) yollar" }
+        reason: { type: string, nullable: true, enum: [road_closed, shelter_full, null] }
+        mode: { type: string, enum: [live, fallback] }
+        source: { type: string, enum: [live, cache, static] }
+    TrafficEdge:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        fromNodeId: { type: string, format: uuid }
+        toNodeId: { type: string, format: uuid }
+        lengthM: { type: integer }
+        status: { type: string, enum: [open, closed] }
+        isAccessible: { type: boolean }
+    ProviderHealth:
+      type: object
+      properties:
+        state: { type: string, enum: [closed, open, half_open] }
+        source: { type: string, enum: [live, cache, static] }
+        failures: { type: integer }
+        lastError: { type: string, nullable: true }
+        lastOkAt: { type: integer, nullable: true }
+        mode: { type: string, enum: ["off", "503", "slow"] }
+    SosCreate:
+      type: object
+      required: [citizenId, type, lat, lng]
+      properties:
+        citizenId: { type: string, format: uuid }
+        type: { type: string, enum: [fire, collapse, flood, medical] }
+        lat: { type: number, minimum: 40.2, maximum: 40.6 }
+        lng: { type: number, minimum: 49.5, maximum: 50.2 }
+    SosCreated:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        type: { type: string }
+        status: { type: string, enum: [new, assigned, resolved] }
+        priority: { type: integer, description: "1 = Kritik Prioritet #1" }
+        duplicate: { type: boolean }
+    SessionUser:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        role: { type: string, enum: [dispatcher, supervisor] }
+    DashboardData:
+      type: object
+      properties:
+        stats:
+          type: object
+          properties:
+            activeSos: { type: integer }
+            prioritySos: { type: integer }
+            safeCitizens: { type: integer }
+            criticalShelters: { type: integer }
+            availableTeams: { type: integer }
+        shelters: { type: array, items: { $ref: "#/components/schemas/MapShelter" } }
+        teams:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string, format: uuid }
+              name: { type: string }
+              status: { type: string, enum: [available, en_route, on_scene] }
+              zoneName: { type: string }
+        sos:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string, format: uuid }
+              type: { type: string }
+              status: { type: string }
+              priority: { type: integer }
+              zoneName: { type: string }
+              lat: { type: number }
+              lng: { type: number }
+              createdAt: { type: string, format: date-time }
+        alerts:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string, format: uuid }
+              kind: { type: string, enum: [sos_cluster, shelter_overload] }
+              zoneName: { type: string }
+              sosCount: { type: integer }
+              message: { type: string }
+              createdAt: { type: string, format: date-time }
+        closedEdges:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string, format: uuid }
+              name: { type: string }
+    ApproveResult:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        status: { type: string, enum: [approved] }
+        approvedBy: { type: string }
+        team: { type: object, nullable: true, properties: { id: { type: string }, name: { type: string } } }
+        shelter: { type: object, nullable: true, properties: { id: { type: string }, name: { type: string } } }
+        assignedSos: { type: integer }
+    RiskSnapshot:
+      type: object
+      properties:
+        generatedAt: { type: string, format: date-time }
+        source: { type: string, enum: [live, simulation, unavailable] }
+        simulation: { type: string, enum: [none, quake, flood] }
+        earthquake: { type: object, nullable: true }
+        flood: { type: object, nullable: true }
+        anomaly: { type: object, nullable: true }
+        rerouteThresholdPct: { type: integer, description: "90; sel riski yüksək olanda 80" }
