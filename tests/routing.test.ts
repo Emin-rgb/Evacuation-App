@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { buildPath, pickShelter, shortestPaths, type GraphEdge } from "@/server/engine/routing";
+import { buildPath, buildSteps, pickShelter, shortestPaths, type GraphEdge } from "@/server/engine/routing";
 
 const edge = (id: string, a: string, b: string, lengthM: number, status: "open" | "closed" = "open"): GraphEdge => ({
   id,
@@ -99,4 +99,14 @@ test("accessibleOnly route never picks an inaccessible shelter", () => {
   const cost = (_s: unknown, d: number) => d;
   assert.equal(pickShelter(shelters, dist, cost)?.shelter.id, "near");
   assert.equal(pickShelter(shelters, dist, cost, { accessibleOnly: true })?.shelter.id, "far");
+});
+
+test("buildSteps merges consecutive segments on the same street", () => {
+  const e = (id: string, a: string, b: string, len: number, name: string): GraphEdge => ({ ...edge(id, a, b, len), name });
+  const edges = [e("1", "A", "B", 100, "Main"), e("2", "B", "C", 50, "Main"), e("3", "C", "D", 70, "Side")];
+  assert.deepEqual(buildSteps(["A", "B", "C", "D"], edges), [
+    { name: "Main", distanceM: 150 },
+    { name: "Side", distanceM: 70 },
+  ]);
+  assert.deepEqual(buildSteps(["D", "C"], edges), [{ name: "Side", distanceM: 70 }]);
 });

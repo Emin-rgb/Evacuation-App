@@ -5,6 +5,7 @@ export type GraphEdge = {
   lengthM: number;
   status: "open" | "closed";
   isAccessible?: boolean;
+  name?: string;
 };
 
 export type RouteOptions = { accessibleOnly?: boolean };
@@ -62,6 +63,29 @@ export function buildPath(prev: Map<string, string>, startNodeId: string, endNod
     cur = p;
   }
   return path.reverse();
+}
+
+export type RouteStep = { name: string; distanceM: number };
+
+/** Turns a node path into road-by-road directions (consecutive segments on the same street are merged). */
+export function buildSteps(pathNodeIds: string[], edges: GraphEdge[]): RouteStep[] {
+  const byPair = new Map<string, GraphEdge>();
+  for (const e of edges) {
+    for (const key of [`${e.fromNodeId}|${e.toNodeId}`, `${e.toNodeId}|${e.fromNodeId}`]) {
+      const existing = byPair.get(key);
+      if (!existing || (existing.status !== "open" && e.status === "open")) byPair.set(key, e);
+    }
+  }
+  const steps: RouteStep[] = [];
+  for (let i = 0; i + 1 < pathNodeIds.length; i++) {
+    const e = byPair.get(`${pathNodeIds[i]}|${pathNodeIds[i + 1]}`);
+    if (!e) continue;
+    const name = e.name ?? "";
+    const last = steps[steps.length - 1];
+    if (last && last.name === name) last.distanceM += e.lengthM;
+    else steps.push({ name, distanceM: e.lengthM });
+  }
+  return steps;
 }
 
 export const FULL_PCT = 90;

@@ -50,6 +50,16 @@ export function useCitizen(origin: Origin) {
     return created.id;
   }, [origin]);
 
+  // A stored priority citizen may be unknown to the server (e.g. DB reseeded): re-register once so
+  // routes keep honouring the role.
+  const synced = useRef(false);
+  useEffect(() => {
+    const id = idRef.current;
+    if (synced.current || !id || roleRef.current !== "priority") return;
+    synced.current = true;
+    api.setCitizenRole(id, "priority").catch(() => create().catch(() => {}));
+  }, [citizenId, create]);
+
   /** Runs `fn` with a valid citizen id; recreates the citizen once if the stored id is stale (e.g. DB reseeded). */
   const withCitizen = useCallback(
     async <T>(fn: (id: string) => Promise<T>): Promise<T> => {

@@ -22,7 +22,8 @@ export type MapShelter = {
   occupancyPct: number;
   isAccessible: boolean;
 };
-export type MapData = { nodes: MapNode[]; edges: MapEdge[]; shelters: MapShelter[] };
+export type MapZone = { id: string; name: string; lat: number; lng: number };
+export type MapData = { nodes: MapNode[]; edges: MapEdge[]; shelters: MapShelter[]; zones: MapZone[] };
 export type Zone = { id: string; name: string; centerLat: number; centerLng: number };
 export type NearestShelter = MapShelter & { distanceM: number };
 
@@ -32,6 +33,8 @@ export type RouteResult = {
   path: { lat: number; lng: number }[];
   distanceM: number;
   etaMin: number;
+  /** road-by-road directions along the path */
+  steps: { name: string; distanceM: number }[];
   rerouted: boolean;
   /** true when the route was computed on accessible edges only (priority citizen) */
   accessible: boolean;

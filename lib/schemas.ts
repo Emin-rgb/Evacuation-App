@@ -8,6 +8,7 @@ export const nearestQuerySchema = z.object({
 export const routeQuerySchema = nearestQuerySchema.extend({
   prev: z.string().uuid().optional(),
   citizenId: z.string().uuid().optional(),
+  shelterId: z.string().uuid().optional(),
 });
 
 export const idParamSchema = z.object({ id: z.string().uuid() });

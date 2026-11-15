@@ -44,6 +44,8 @@ export function CitizenView() {
   const { citizenId, role, setRole, withCitizen } = useCitizen(origin);
   const routeCitizenId = role === "priority" ? (citizenId ?? undefined) : undefined;
 
+  const [updatedAt, setUpdatedAt] = useState<number | null>(null);
+  const [targetId, setTargetId] = useState<string | null>(null);
   const [banner, setBanner] = useState<{ reason: RouteReason; from: string; to: string } | null>(null);
   const prevShelter = useRef<{ id: string; name: string } | null>(null);
 
@@ -86,14 +88,24 @@ export function CitizenView() {
     setRoute(null);
     const poll = (first: boolean) =>
       api
-        .getRoute(origin.lat, origin.lng, prevShelter.current?.id, routeCitizenId)
+        .getRoute(origin.lat, origin.lng, {
+          prev: prevShelter.current?.id,
+          citizenId: routeCitizenId,
+          shelterId: targetId ?? undefined,
+        })
         .then((r) => {
           if (cancelled) return;
           if (r.rerouted && r.reason && prevShelter.current) {
             setBanner({ reason: r.reason, from: prevShelter.current.name, to: r.shelter.name });
           }
+          if (targetId && r.shelter.id !== targetId) {
+            // chosen shelter is full / unreachable / not accessible: fall back to the recommendation
+            toast.info(t.citizen.targetUnavailable);
+            setTargetId(null);
+          }
           prevShelter.current = { id: r.shelter.id, name: r.shelter.name };
           setRoute(r);
+          setUpdatedAt(Date.now());
           setRouteError(null);
         })
         .catch((e: Error) => !cancelled && setRouteError(e.message === "No reachable shelter" ? "none" : "error"))
@@ -104,11 +116,13 @@ export function CitizenView() {
       cancelled = true;
       clearInterval(timer);
     };
-  }, [origin, routeCitizenId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `t` only feeds a toast message
+  }, [origin, routeCitizenId, targetId]);
 
   function pickZone(id: string) {
     setZoneId(id);
     setLocationNote(false);
+    setTargetId(null);
     const z = zones.find((x) => x.id === id);
     if (z) setOrigin({ lat: z.centerLat, lng: z.centerLng });
   }
@@ -155,7 +169,16 @@ export function CitizenView() {
           {t.map.empty}
         </div>
       ) : (
-        <CityMap data={map} route={route?.path} highlightShelterId={route?.shelter.id ?? top[0]?.id} />
+        <CityMap
+          data={map}
+          route={route?.path}
+          origin={origin}
+          highlightShelterId={route?.shelter.id ?? top[0]?.id}
+          updatedAt={updatedAt}
+          onShelterClick={(id) => setTargetId(id)}
+          focus={route?.path}
+          fitKey={route && origin ? `${origin.lat},${origin.lng}|${route.shelter.id}` : undefined}
+        />
       )}
 
       <div className="flex flex-col gap-4">
@@ -199,7 +222,10 @@ export function CitizenView() {
           <div className="rounded-xl border border-blue-600 p-4">
             <div className="flex items-center justify-between gap-2">
               <h2 className="text-lg font-semibold">{t.citizen.route}</h2>
-              {route?.accessible && <Badge variant="secondary">{t.citizen.accessibleRoute}</Badge>}
+              <div className="flex flex-wrap justify-end gap-1">
+                {targetId && route?.shelter.id === targetId && <Badge variant="outline">{t.citizen.chosenBadge}</Badge>}
+                {route?.accessible && <Badge variant="secondary">{t.citizen.accessibleRoute}</Badge>}
+              </div>
             </div>
             {banner && (
               <div role="status" className="mt-2 rounded-lg bg-amber-100 p-3 text-sm text-amber-900">
@@ -220,6 +246,24 @@ export function CitizenView() {
                   {t.citizen.routeDistance}: {formatDistance(route.distanceM)} · {t.citizen.routeEta}:{" "}
                   {route.etaMin} {t.citizen.routeMin}
                 </div>
+                {targetId && (
+                  <Button variant="outline" size="sm" className="mt-2" onClick={() => setTargetId(null)}>
+                    {t.citizen.backToRecommended}
+                  </Button>
+                )}
+                <details className="mt-3" open>
+                  <summary className="cursor-pointer font-medium">{t.citizen.directions}</summary>
+                  <ol className="mt-2 flex flex-col gap-1.5 border-l-2 border-blue-600 pl-3">
+                    <li>{t.citizen.stepStart}: {t.map.youAreHere}</li>
+                    {route.steps.map((st, i) => (
+                      <li key={`${st.name}-${i}`} className="flex justify-between gap-2">
+                        <span>{st.name}</span>
+                        <span className="text-muted-foreground tabular-nums">{formatDistance(st.distanceM)}</span>
+                      </li>
+                    ))}
+                    <li className="font-medium">{t.citizen.stepArrive}: {route.shelter.name}</li>
+                  </ol>
+                </details>
               </div>
             ) : (
               <p className="mt-1 text-sm text-muted-foreground">
@@ -265,6 +309,15 @@ export function CitizenView() {
                   {t.citizen.occupancy} {s.occupancyPct}%
                 </span>
               </div>
+              <Button
+                variant={route?.shelter.id === s.id ? "secondary" : "outline"}
+                size="sm"
+                className="mt-3 w-full"
+                disabled={route?.shelter.id === s.id}
+                onClick={() => setTargetId(s.id)}
+              >
+                {route?.shelter.id === s.id ? t.citizen.currentTarget : t.citizen.goHere}
+              </Button>
             </div>
           ))
         )}

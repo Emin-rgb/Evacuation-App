@@ -17,6 +17,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
+import {
+  Alert02Icon,
+  AmbulanceIcon,
+  CheckmarkCircle02Icon,
+  Home01Icon,
+  UserGroup03Icon,
+} from "@hugeicons/core-free-icons";
+import { SOS_ICON, SOS_SWATCH } from "@/lib/map-icons";
 import { api } from "@/lib/api";
 import { useT } from "@/lib/i18n/provider";
 import type { DashboardData, MapData, TeamStatus } from "@/lib/types";
@@ -54,12 +63,15 @@ export function DispatcherView() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [map, setMap] = useState<MapData | null>(null);
   const [error, setError] = useState(false);
+  const [updatedAt, setUpdatedAt] = useState<number | null>(null);
+  const [selectedSos, setSelectedSos] = useState<string | null>(null);
 
   const load = useCallback(() => {
     Promise.all([api.getDashboard(), api.getMap()])
       .then(([d, m]) => {
         setData(d);
         setMap(m);
+        setUpdatedAt(Date.now());
         setError(false);
       })
       .catch(() => setError(true));
@@ -138,16 +150,51 @@ export function DispatcherView() {
     );
   }
 
-  const kpis = [
+  const focusSos = data.sos.find((s) => s.id === selectedSos) ?? null;
+
+  const kpis: {
+    label: string;
+    value: number;
+    tone: string;
+    sub: string | null;
+    icon: IconSvgElement;
+    bg: string;
+  }[] = [
     {
       label: t.dispatcher.kpiSos,
       value: data.stats.activeSos,
       tone: "text-red-600",
-      sub: data.stats.prioritySos > 0 ? `${t.dispatcher.kpiPriority}: ${data.stats.prioritySos}` : null,
+      icon: Alert02Icon,
+      bg: "bg-red-500/10 text-red-600",
+      sub:
+        data.stats.prioritySos > 0
+          ? `${t.dispatcher.kpiPriority}: ${data.stats.prioritySos}`
+          : null,
     },
-    { label: t.dispatcher.kpiSafe, value: data.stats.safeCitizens, tone: "text-emerald-600", sub: null },
-    { label: t.dispatcher.kpiCritical, value: data.stats.criticalShelters, tone: "text-amber-600", sub: null },
-    { label: t.dispatcher.kpiTeams, value: data.stats.availableTeams, tone: "", sub: null },
+    {
+      label: t.dispatcher.kpiSafe,
+      value: data.stats.safeCitizens,
+      tone: "text-emerald-600",
+      sub: null,
+      icon: CheckmarkCircle02Icon,
+      bg: "bg-emerald-500/10 text-emerald-600",
+    },
+    {
+      label: t.dispatcher.kpiCritical,
+      value: data.stats.criticalShelters,
+      tone: "text-amber-600",
+      sub: null,
+      icon: Home01Icon,
+      bg: "bg-amber-500/10 text-amber-600",
+    },
+    {
+      label: t.dispatcher.kpiTeams,
+      value: data.stats.availableTeams,
+      tone: "",
+      sub: null,
+      icon: UserGroup03Icon,
+      bg: "bg-blue-500/10 text-blue-600",
+    },
   ];
 
   return (
@@ -166,10 +213,15 @@ export function DispatcherView() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {kpis.map((k) => (
           <Card key={k.label}>
-            <CardContent className="flex flex-col gap-1">
-              <span className={cn("text-3xl font-semibold", k.tone)}>{k.value}</span>
-              <span className="text-muted-foreground text-sm">{k.label}</span>
-              {k.sub && <span className="text-xs font-semibold text-red-600">{k.sub}</span>}
+            <CardContent className="flex items-start justify-between gap-3">
+              <div className="flex flex-col gap-1">
+                <span className={cn("text-3xl font-semibold", k.tone)}>{k.value}</span>
+                <span className="text-muted-foreground text-sm">{k.label}</span>
+                {k.sub && <span className="text-xs font-semibold text-red-600">{k.sub}</span>}
+              </div>
+              <span className={cn("flex size-10 items-center justify-center rounded-xl", k.bg)}>
+                <HugeiconsIcon icon={k.icon} size={22} aria-hidden="true" />
+              </span>
             </CardContent>
           </Card>
         ))}
@@ -187,14 +239,23 @@ export function DispatcherView() {
               className="flex flex-col gap-3 rounded-xl border border-red-500 bg-red-500/15 p-4"
             >
               <div className="flex animate-pulse items-center justify-between gap-4">
-                <div>
-                  <p className="font-semibold text-red-700 dark:text-red-400">
-                    {a.kind === "sos_cluster"
-                      ? t.dispatcher.alertCluster
-                      : t.dispatcher.alertOverload}{" "}
-                    · {a.zoneName}
-                  </p>
-                  <p className="text-muted-foreground text-sm">{a.message}</p>
+                <div className="flex items-start gap-3">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-red-600 text-white">
+                    <HugeiconsIcon
+                      icon={a.kind === "sos_cluster" ? AmbulanceIcon : Home01Icon}
+                      size={18}
+                      aria-hidden="true"
+                    />
+                  </span>
+                  <div>
+                    <p className="font-semibold text-red-700 dark:text-red-400">
+                      {a.kind === "sos_cluster"
+                        ? t.dispatcher.alertCluster
+                        : t.dispatcher.alertOverload}{" "}
+                      · {a.zoneName}
+                    </p>
+                    <p className="text-muted-foreground text-sm">{a.message}</p>
+                  </div>
                 </div>
                 <div className="text-muted-foreground text-right text-sm">
                   {a.kind === "sos_cluster" && (
@@ -227,7 +288,14 @@ export function DispatcherView() {
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="flex flex-col gap-2">
           <h2 className="text-lg font-semibold">{t.dispatcher.mapTitle}</h2>
-          <CityMap data={map} sos={sosPoints} />
+          <CityMap
+            data={map}
+            sos={sosPoints}
+            updatedAt={updatedAt}
+            highlightSosId={selectedSos}
+            focus={focusSos ? [focusSos] : undefined}
+            fitKey={focusSos ? `sos-${focusSos.id}` : undefined}
+          />
           {data.closedEdges.length > 0 && (
             <p className="text-muted-foreground text-sm">
               {t.dispatcher.closedRoads}: {data.closedEdges.map((e) => e.name).join(", ")}
@@ -257,10 +325,36 @@ export function DispatcherView() {
                 </TableHeader>
                 <TableBody>
                   {data.sos.map((s) => (
-                    <TableRow key={s.id} className={cn(s.priority > 0 && "bg-red-500/10")}>
+                    <TableRow
+                      key={s.id}
+                      tabIndex={0}
+                      aria-selected={selectedSos === s.id}
+                      onClick={() => setSelectedSos(selectedSos === s.id ? null : s.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          setSelectedSos(selectedSos === s.id ? null : s.id);
+                        }
+                      }}
+                      className={cn(
+                        "cursor-pointer",
+                        s.priority > 0 && "bg-red-500/10",
+                        selectedSos === s.id && "ring-2 ring-blue-600 ring-inset",
+                      )}
+                    >
                       <TableCell className="font-medium">
                         <div className="flex flex-wrap items-center gap-2">
-                          {s.priority > 0 && <Badge variant="destructive">{t.dispatcher.priorityBadge}</Badge>}
+                          <span
+                            className={cn(
+                              "flex size-6 items-center justify-center rounded-full text-white",
+                              SOS_SWATCH[s.type],
+                            )}
+                          >
+                            <HugeiconsIcon icon={SOS_ICON[s.type]} size={13} aria-hidden="true" />
+                          </span>
+                          {s.priority > 0 && (
+                            <Badge variant="destructive">{t.dispatcher.priorityBadge}</Badge>
+                          )}
                           {t.dispatcher.sosTypes[s.type]}
                         </div>
                       </TableCell>

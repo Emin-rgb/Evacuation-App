@@ -40,9 +40,9 @@ export const api = {
   getZones: () => get<Zone[]>("/api/zones"),
   getNearestShelters: (lat: number, lng: number) =>
     get<NearestShelter[]>(`/api/shelters/nearest?lat=${lat}&lng=${lng}`),
-  getRoute: (lat: number, lng: number, prev?: string, citizenId?: string) =>
+  getRoute: (lat: number, lng: number, opts: { prev?: string; citizenId?: string; shelterId?: string } = {}) =>
     get<RouteResult>(
-      `/api/route?lat=${lat}&lng=${lng}${prev ? `&prev=${prev}` : ""}${citizenId ? `&citizenId=${citizenId}` : ""}`,
+      `/api/route?lat=${lat}&lng=${lng}${opts.prev ? `&prev=${opts.prev}` : ""}${opts.citizenId ? `&citizenId=${opts.citizenId}` : ""}${opts.shelterId ? `&shelterId=${opts.shelterId}` : ""}`,
     ),
   getDashboard: () => get<DashboardData>("/api/dashboard"),
   setRoadStatus: (id: string, status: RoadStatus) =>

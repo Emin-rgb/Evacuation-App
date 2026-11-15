@@ -156,7 +156,20 @@ Each task ends with a **✅ Browser check**. Do them in order; tick them off whe
   - [ ] 15.2 13:00 drop: ____ (hooks ready: `TrafficProvider` fallback + "degraded mode" badge for an API outage)
   - [ ] 15.3 14:00 drop: ____ (hooks ready: rate limit on `POST /api/sos`, pagination, indexes for load; dispatcher PIN via `proxy.ts` for security)
 
-- [ ] **16. Polish (demo-polish skill): CODE FREEZE at 3:15**
+- [x] **16. Map & UX upgrade** (make the map self-explanatory; SVG stays, no new deps; all strings in both dictionaries; animations respect `prefers-reduced-motion`)
+  - [x] 16.1 "You are here": pulsing blue origin marker + label on the citizen map (origin passed to `CityMap`); route starts visibly from it
+  - [x] 16.2 Icon markers (hugeicons, `aria-hidden`): shelter by type (shelter/park/stadium), SOS by type (fire/collapse/flood/medical), closed-road "X" badge (rescue teams have no map position yet, so they stay in the Teams tab); inaccessible shelter gets a small ♿-crossed badge; replace the plain circles
+  - [x] 16.3 Legend + layer toggles on both maps (roads, shelters, SOS, closed roads, teams); colour key for occupancy
+  - [x] 16.4 Motion: route drawn with flowing dashes + direction; SOS ripple pulse (stronger for Priority#1); brief flash when a shelter/road/alert changes; old route fades on reroute (done: flowing route dashes, SOS ripple, shelter/new-shelter flash ring, closed-road pop; dropped: old-route fade)
+  - [x] 16.5 "Is it real?" clarity: "Simulyasiya / Simulation" badge on the map, "Live · updated 3 s ago" pulse indicator (slot for the "degraded mode" badge from 15.2) (done: Live badge with seconds-since-update, turns amber "Connection delayed" after 9 s)
+  - [x] 16.6 Interaction: tap a shelter → card (occupancy, distance, accessible); zoom/pan + auto-fit to the route; on the dispatcher, clicking an SOS row highlights its dot (done: tap shelter to route, zoom/pan, auto-fit, SOS row highlights its dot)
+  - [x] 16.6c Zoom + real routes (user request): zoom/pan on every map (+/- buttons, wheel, drag, pinch, "reset view", auto-fit to the route; markers keep their screen size); citizen taps any shelter on the map or a card ("Go here") to route there; route response carries road-by-road `steps` (street name + metres, built from the same Dijkstra path) shown as directions; falls back to the recommended shelter (with a toast) if the chosen one is full/unreachable/inaccessible
+  - [x] 16.6b App-like feel (user request): map and shelter cards stay in sync (tap a card → map flies to it and highlights it; tap a marker → its card scrolls into view); citizen can tap any shelter to route there ("Go here"), with a "back to recommended" action; smooth transitions between routes/zoom; press/hover states; on phones the shelter list becomes a draggable bottom sheet over the full-screen map (done: marker tap and "Go here" drive the route card; dropped: mobile bottom sheet, card-to-map fly)
+  - [x] 16.7 Dispatcher look, inspired by the ops-dashboard reference: icons on KPI cards, severity colours on the alert table; light theme only (decided: simple and readable on a projector) (done: KPI/alert/SOS-type icons; no dark theme)
+  - [x] 16.8 Orientation without tiles: faint district outlines/labels and the Caspian shoreline drawn in SVG (decided: no real tiles, so no dependency and no tile-outage risk during the demo) (done as sea + district name labels; no district outlines, to avoid inventing boundaries)
+  - ✅ Browser check: citizen sees themselves on the map and a moving route; every marker type is recognisable by icon; legend toggles work; reduced-motion disables animation; AZ/EN still complete
+
+- [ ] **17. Polish (demo-polish skill): CODE FREEZE at 3:15**
   - [ ] 16.1 Re-seed to the demo starting state; rehearse the 8-step demo script twice
   - [ ] 16.2 Check every screen's loading / empty / error states, mobile width for `/citizen`
   - ✅ Full demo script runs on production without a hitch
@@ -171,4 +184,5 @@ Each task ends with a **✅ Browser check**. Do them in order; tick them off whe
 - Tests: unit tests only on the engine, using built-in `node:test` (approved exception to "no tests unless asked").
 - Drop 1: accessibility is a flag on edges/shelters and a role on the citizen, so the same Dijkstra serves both users with one filter; no second graph, no new tables.
 - Drop 1: i18n is a typed AZ/EN dictionary + client hook, no library; the server returns codes, never display text.
+- Map upgrade: stay with the SVG map (icons, motion, legend, "you are here", simulation label); no real tiles, light theme only. Simplicity and reliability build the jury's trust.
 - NOT building: real auth, real map/traffic/geocoding APIs, WebSockets, SMS/push, admin CRUD, AI feature, charts lib, Docker, multi-city.
