@@ -136,10 +136,10 @@ Each task ends with a **✅ Browser check**. Do them in order; tick them off whe
   - [x] 13.5 `npm test` script
   - ✅ `npm test` is green (terminal)
 
-- [ ] **14. Deliverable docs**
-  - [ ] 14.1 `README.md`: run steps (env, db:push, db:seed, dev), architecture diagram (frontend / API / services / engine / DB / traffic provider), challenge-drop changes section
-  - [ ] 14.2 `docs/ai-declaration.md`: which AI tools were used, when and how (code, tests, architecture, drops)
-  - [ ] 14.3 `docs/technical.md`: approach, technologies, security + performance measures, future work
+- [x] **14. Deliverable docs**
+  - [x] 14.1 `README.md`: run steps (env, db:push, db:seed, dev), architecture diagram (frontend / API / services / engine / DB / traffic provider), challenge-drop changes section
+  - [x] 14.2 `docs/ai-declaration.md`: which AI tools were used, when and how (code, tests, architecture, drops)
+  - [x] 14.3 `docs/technical.md`: approach, technologies, security + performance measures, future work
   - ✅ README renders well on GitHub
 
 - [ ] **15. Challenge drops** (fill in when announced; log each change in the README)
