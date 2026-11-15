@@ -40,3 +40,34 @@ export type TrafficEdge = {
   lengthM: number;
   status: RoadStatus;
 };
+
+export type SosStatus = "new" | "assigned" | "resolved";
+export type TeamStatus = "available" | "en_route" | "on_scene";
+export type AlertKind = "sos_cluster" | "shelter_overload";
+
+export type DashboardSos = {
+  id: string;
+  type: SosType;
+  status: SosStatus;
+  zoneName: string;
+  lat: number;
+  lng: number;
+  createdAt: string;
+};
+export type DashboardTeam = { id: string; name: string; status: TeamStatus; zoneName: string };
+export type DashboardAlert = {
+  id: string;
+  kind: AlertKind;
+  zoneName: string;
+  sosCount: number;
+  message: string;
+  createdAt: string;
+};
+export type DashboardData = {
+  stats: { activeSos: number; safeCitizens: number; criticalShelters: number; availableTeams: number };
+  shelters: (MapShelter & { zoneName: string })[];
+  teams: DashboardTeam[];
+  sos: DashboardSos[];
+  alerts: DashboardAlert[];
+  closedEdges: { id: string; name: string }[];
+};

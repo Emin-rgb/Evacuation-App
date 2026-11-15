@@ -1,4 +1,4 @@
-import type { MapData, NearestShelter, RouteResult, TrafficEdge, Zone } from "@/lib/types";
+import type { DashboardData, MapData, NearestShelter, RouteResult, TrafficEdge, Zone } from "@/lib/types";
 
 async function get<T>(url: string): Promise<T> {
   const res = await fetch(url, { cache: "no-store" });
@@ -15,5 +15,6 @@ export const api = {
   getNearestShelters: (lat: number, lng: number) =>
     get<NearestShelter[]>(`/api/shelters/nearest?lat=${lat}&lng=${lng}`),
   getRoute: (lat: number, lng: number) => get<RouteResult>(`/api/route?lat=${lat}&lng=${lng}`),
+  getDashboard: () => get<DashboardData>("/api/dashboard"),
   getTraffic: () => get<TrafficEdge[]>("/api/traffic"),
 };
